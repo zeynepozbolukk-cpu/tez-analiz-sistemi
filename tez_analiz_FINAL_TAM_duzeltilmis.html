@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tez Analiz Sistemi – Final</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{
+  --bg:#f6f3ee; --card:#ffffff; --muted:#6b7280; --text:#111827; --line:#ddd7ce;
+  --accent:#274c77; --accent2:#0f766e; --warn:#92400e; --soft:#f0ebe3;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+header{background:#1f2937;color:#fff;padding:14px 18px;position:sticky;top:0;z-index:30}
+header h1{margin:0;font-size:18px}
+nav{display:flex;gap:8px;overflow:auto;padding:10px 14px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:50px;z-index:29}
+nav button{border:none;background:#eef2f7;padding:8px 12px;border-radius:999px;cursor:pointer;font-size:12px;white-space:nowrap}
+nav button.active{background:var(--accent);color:#fff}
+main{max-width:1320px;margin:0 auto;padding:18px}
+.tab{display:none}
+.tab.active{display:block}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:1.2fr 1fr}
+.g22{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.card h2{margin:0 0 6px 0;font-size:20px}
+.sub{margin:0 0 12px 0;color:var(--muted);font-size:12px}
+label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}
+textarea{min-height:72px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btn{border:none;background:var(--accent);color:#fff;padding:10px 14px;border-radius:8px;cursor:pointer}
+.btn.secondary{background:var(--accent2)}
+.btn.ghost{background:#eef2f7;color:#111827}
+.btn.warn{background:#b91c1c}
+.stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px}
+.stat .v{font-size:28px;font-weight:700}
+.stat .k{font-size:12px;color:var(--muted)}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:10px;border-bottom:1px solid #eee8de;text-align:left;vertical-align:top}
+th{background:#faf9f6;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef2f7;font-size:11px;margin:2px}
+.badge.kw{background:#f5f0e8}
+.notice{background:#fff7ed;border:1px solid #fed7aa;color:var(--warn);padding:10px 12px;border-radius:8px;font-size:12px}
+.empty{padding:26px;text-align:center;color:var(--muted)}
+.chartbox{position:relative;height:310px}
+.chartbox.sm{height:230px}
+.preview-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.preview{border:1px solid var(--line);border-radius:10px;background:#fff;padding:10px}
+.preview h4{margin:0 0 8px 0;font-size:14px}
+.img-frame{height:140px;background:var(--soft);border:1px solid #e6dfd4;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:8px}
+.img-frame img{max-width:100%;max-height:100%;object-fit:contain}
+.kws{margin-top:8px}
+.rubric-card{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff;margin-bottom:14px}
+.rubric-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.rubric-title{font-size:18px;font-weight:700}
+.rubric-form{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;align-items:end;margin-top:12px}
+.small{font-size:12px;color:var(--muted)}
+.finding{background:#f8fbff;border-left:4px solid var(--accent);padding:12px 14px;border-radius:8px;margin-bottom:12px;line-height:1.7}
+hr.sep{border:none;border-top:1px solid var(--line);margin:16px 0}
+@media(max-width:1000px){.g2,.g22,.g3,.g4,.row,.row3,.preview-grid,.rubric-form{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><h1>İç Mimarlık Tez Analiz Sistemi – Final</h1></header>
+<nav id="tabs"></nav>
+<main>
+  <section id="tab-data" class="tab active"></section>
+  <section id="tab-artworks" class="tab"></section>
+  <section id="tab-tools" class="tab"></section>
+  <section id="tab-vize" class="tab"></section>
+  <section id="tab-final" class="tab"></section>
+  <section id="tab-compare" class="tab"></section>
+  <section id="tab-rubric" class="tab"></section>
+  <section id="tab-findings" class="tab"></section>
+</main>
+
+<script>
+const STORAGE_STUDENTS = 'tez_students_final_v2';
+const STORAGE_RUBRICS = 'tez_rubrics_final_v2';
+const IMAGE_DB_NAME = 'tez_analiz_images_db';
+const IMAGE_STORE_NAME = 'student_images';
+
+const tabDefs = [
+  ['tab-data','1. Veri Girişi'],
+  ['tab-artworks','2. Eser Dağılımı'],
+  ['tab-tools','3. YZ Araçları'],
+  ['tab-vize','4. Vize Prompt'],
+  ['tab-final','5. Final Prompt'],
+  ['tab-compare','6. Vize–Final'],
+  ['tab-rubric','7. Rubrik'],
+  ['tab-findings','8. Bulgular']
+];
+
+let students = [];
+let rubrics = {};
+let editingId = null;
+let charts = {};
+
+function stripImagesFromStudent(student){
+  return {
+    ...student,
+    vize:{...student.vize, images:{past:'',present:'',future:''}},
+    final:{...student.final, images:{past:'',present:'',future:''}}
+  };
+}
+function getStudentImages(student){
+  return {
+    vize:{...(student?.vize?.images || {past:'',present:'',future:''})},
+    final:{...(student?.final?.images || {past:'',present:'',future:''})}
+  };
+}
+function applyImagesToStudent(student, images){
+  return {
+    ...student,
+    vize:{...student.vize, images:{past:'',present:'',future:'', ...(images?.vize||{})}},
+    final:{...student.final, images:{past:'',present:'',future:'', ...(images?.final||{})}}
+  };
+}
+function openImageDB(){
+  return new Promise((resolve, reject)=>{
+    if(!window.indexedDB){ reject(new Error('IndexedDB desteklenmiyor.')); return; }
+    const req = indexedDB.open(IMAGE_DB_NAME, 1);
+    req.onupgradeneeded = ()=>{
+      const db = req.result;
+      if(!db.objectStoreNames.contains(IMAGE_STORE_NAME)) db.createObjectStore(IMAGE_STORE_NAME);
+    };
+    req.onsuccess = ()=>resolve(req.result);
+    req.onerror = ()=>reject(req.error || new Error('Veritabanı açılamadı.'));
+  });
+}
+async function idbSet(key, value){
+  const db = await openImageDB();
+  return new Promise((resolve, reject)=>{
+    const tx = db.transaction(IMAGE_STORE_NAME, 'readwrite');
+    tx.objectStore(IMAGE_STORE_NAME).put(value, key);
+    tx.oncomplete = ()=>{ db.close(); resolve(true); };
+    tx.onerror = ()=>{ db.close(); reject(tx.error || new Error('Görsel kaydedilemedi.')); };
+  });
+}
+async function idbGet(key){
+  const db = await openImageDB();
+  return new Promise((resolve, reject)=>{
+    const tx = db.transaction(IMAGE_STORE_NAME, 'readonly');
+    const req = tx.objectStore(IMAGE_STORE_NAME).get(key);
+    req.onsuccess = ()=>{ db.close(); resolve(req.result || null); };
+    req.onerror = ()=>{ db.close(); reject(req.error || new Error('Görsel okunamadı.')); };
+  });
+}
+async function idbDelete(key){
+  const db = await openImageDB();
+  return new Promise((resolve, reject)=>{
+    const tx = db.transaction(IMAGE_STORE_NAME, 'readwrite');
+    tx.objectStore(IMAGE_STORE_NAME).delete(key);
+    tx.oncomplete = ()=>{ db.close(); resolve(true); };
+    tx.onerror = ()=>{ db.close(); reject(tx.error || new Error('Görsel silinemedi.')); };
+  });
+}
+async function saveStudents(){
+  const safeStudents = students.map(stripImagesFromStudent);
+  localStorage.setItem(STORAGE_STUDENTS, JSON.stringify(safeStudents));
+  await Promise.all(students.map(s => idbSet(s.id, getStudentImages(s))));
+}
+async function loadStudents(){
+  try{
+    const meta = JSON.parse(localStorage.getItem(STORAGE_STUDENTS) || '[]');
+    const hydrated = [];
+    for(const student of meta){
+      const images = await idbGet(student.id).catch(()=>null);
+      hydrated.push(applyImagesToStudent(student, images));
+    }
+    students = hydrated;
+  }catch(e){
+    console.error(e);
+    students = [];
+  }
+}
+function saveRubrics(){ localStorage.setItem(STORAGE_RUBRICS, JSON.stringify(rubrics)); }
+function loadRubrics(){ try{ rubrics = JSON.parse(localStorage.getItem(STORAGE_RUBRICS) || '{}'); }catch(e){ rubrics = {}; } }
+
+function destroyCharts(){ Object.values(charts).forEach(c=>{ try{ c.destroy(); }catch(e){} }); charts = {}; }
+
+function buildTabs(){
+  const nav = document.getElementById('tabs');
+  nav.innerHTML = tabDefs.map(([id,label],i)=>`<button class="${i===0?'active':''}" data-tab="${id}" onclick="showTab('${id}')">${label}</button>`).join('');
+}
+function showTab(id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===id));
+  renderVisible(id);
+}
+function renderVisible(id){
+  destroyCharts();
+  if(id==='tab-artworks') renderArtworks();
+  if(id==='tab-tools') renderTools();
+  if(id==='tab-vize') renderPromptSection('vize');
+  if(id==='tab-final') renderPromptSection('final');
+  if(id==='tab-compare') renderCompare();
+  if(id==='tab-rubric') renderRubric();
+  if(id==='tab-findings') renderFindings();
+}
+
+function ensureRubric(id){
+  if(!rubrics[id]){
+    rubrics[id] = {
+      vize:{conceptual:'',prompt:'',temporal:'',ai:'',creativity:''},
+      final:{conceptual:'',prompt:'',temporal:'',ai:'',creativity:''}
+    };
+  }
+}
+
+function avgRubric(obj){
+  const arr = [obj.conceptual,obj.prompt,obj.temporal,obj.ai,obj.creativity].map(Number).filter(v=>v>0);
+  return arr.length ? +(arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(2) : 0;
+}
+
+function fileToDataURL(file){
+  return new Promise(resolve=>{
+    if(!file){ resolve(''); return; }
+    const r = new FileReader();
+    r.onload = ()=>resolve(r.result);
+    r.onerror = ()=>resolve('');
+    r.readAsDataURL(file);
+  });
+}
+function compressImageDataURL(dataURL, maxSize=1600, quality=0.82){
+  return new Promise(resolve=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const ratio = Math.min(1, maxSize / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(img.width * ratio));
+      canvas.height = Math.max(1, Math.round(img.height * ratio));
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = ()=>resolve(dataURL);
+    img.src = dataURL;
+  });
+}
+async function fileToStoredImage(file){
+  const dataUrl = await fileToDataURL(file);
+  if(!dataUrl) return '';
+  return await compressImageDataURL(dataUrl);
+}
+
+function collectChecked(selector){ return [...document.querySelectorAll(selector+':checked')].map(x=>x.value); }
+function setChecked(selector, vals){
+  document.querySelectorAll(selector).forEach(ch=>ch.checked = (vals||[]).includes(ch.value));
+}
+function normalizeTools(baseVals, otherVal){
+  const vals = [...(baseVals||[])];
+  const i = vals.indexOf('Diğer');
+  if(i>=0){
+    vals.splice(i,1);
+    if((otherVal||'').trim()) vals.push('Diğer: ' + otherVal.trim());
+  }
+  return vals;
+}
+function extractOther(values){
+  const f = (values||[]).find(v=>String(v).startsWith('Diğer: '));
+  return f ? String(f).replace(/^Diğer:\s*/, '') : '';
+}
+function toggleOtherFields(){
+  const textOther = document.querySelector('.tool-text[value="Diğer"]')?.checked;
+  const imgOther = document.querySelector('.tool-image[value="Diğer"]')?.checked;
+  const t = document.getElementById('otherTextWrap');
+  const i = document.getElementById('otherImageWrap');
+  if(t) t.style.display = textOther ? 'block' : 'none';
+  if(i) i.style.display = imgOther ? 'block' : 'none';
+}
+
+const stopWords = new Set(['ve','ile','bir','bu','için','the','and','for','with','from','that','this','çok','gibi','daha','olarak']);
+const timeLex = {
+  past:['geçmiş','tarihsel','eski','nostaljik','antik','historical','past','traditional','vintage','aged'],
+  present:['günümüz','çağdaş','modern','güncel','kent','present','contemporary','urban','current','realistic'],
+  future:['gelecek','ütopik','spekülatif','dijital','otonom','future','utopian','speculative','futuristic','smart']
+};
+const narrativeLex = ['atmosfer','ışık','gölge','malzeme','beton','cam','ahşap','hikaye','duygu','anlatı','mood','light','shadow','material','concrete','glass','wood','story','emotion'];
+function tokenize(text){
+  return (text||'').toLowerCase().replace(/[^\p{L}\p{N}\s]/gu,' ').split(/\s+/).filter(x => x && x.length>2 && !stopWords.has(x));
+}
+function promptMetrics(text, phaseKey){
+  const tokens = tokenize(text);
+  const unique = [...new Set(tokens)];
+  const temporalHits = unique.filter(x=>timeLex[phaseKey].includes(x)).length;
+  const narrativeHits = unique.filter(x=>narrativeLex.includes(x)).length;
+  const conceptualVariety = Math.min(5, +(unique.length/4).toFixed(2));
+  const temporalSuitability = Math.min(5, +(temporalHits*1.5 + (temporalHits?0.5:0)).toFixed(2));
+  const narrativeVariety = Math.min(5, +(narrativeHits*1.2 + Math.min(tokens.length/14,1.5)).toFixed(2));
+  const quality = +((conceptualVariety*0.4 + temporalSuitability*0.35 + narrativeVariety*0.25)).toFixed(2);
+  return {tokens, uniqueCount:unique.length, wordCount:tokens.length, conceptualVariety, temporalSuitability, narrativeVariety, quality};
+}
+function analyzeSet(setObj){
+  const past = promptMetrics(setObj.past,'past');
+  const present = promptMetrics(setObj.present,'present');
+  const future = promptMetrics(setObj.future,'future');
+  const temporalDifferentiation = +(((Math.abs(past.quality-present.quality)+Math.abs(past.quality-future.quality)+Math.abs(present.quality-future.quality))/3)).toFixed(2);
+  return {
+    past,present,future,
+    avgQuality:+((past.quality+present.quality+future.quality)/3).toFixed(2),
+    avgWords:+((past.wordCount+present.wordCount+future.wordCount)/3).toFixed(1),
+    avgUnique:+((past.uniqueCount+present.uniqueCount+future.uniqueCount)/3).toFixed(1),
+    temporalDifferentiation
+  };
+}
+function topKeywords(text, n=5){
+  const freq = {};
+  tokenize(text).forEach(t=>freq[t]=(freq[t]||0)+1);
+  return Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,n).map(x=>x[0]);
+}
+function renderImage(src){
+  return src ? `<img src="${src}" alt="">` : `<div class="small">Görsel yok</div>`;
+}
+
+function renderDataTab(){
+  const el = document.getElementById('tab-data');
+  el.innerHTML = `
+  <div class="grid g2">
+    <div class="card">
+      <h2>Öğrenci Verisi Girişi</h2>
+      <p class="sub">Öğrenci bilgileri, kullanılan yapay zekâ araçları, vize/final promptları ve görseller</p><div class="notice" style="margin-bottom:12px">Sistem güncellendi: uzun promptlar ve görseller artık tarayıcı kotasına takılmadan ayrı depolamada saklanır. Görseller yüklenirken otomatik optimize edilir.</div>
+
+      <label>Öğrenci Kodu</label>
+      <input id="studentId" placeholder="Ö-01">
+
+      <div class="row">
+        <div>
+          <label>Seçilen Eser</label>
+          <input id="artworkName" placeholder="Örn. Howl's Moving Castle">
+        </div>
+        <div>
+          <label>Eser Türü</label>
+          <select id="artworkType">
+            <option value="film">Film</option>
+            <option value="kitap">Kitap / Roman</option>
+            <option value="sanat">Görsel Sanat</option>
+            <option value="muzik">Müzik</option>
+            <option value="diger">Diğer</option>
+          </select>
+        </div>
+      </div>
+
+      <hr class="sep">
+      <div class="row">
+        <div>
+          <label>Prompt / Metin Desteği</label>
+          ${['ChatGPT','Claude','Gemini','Diğer'].map(x=>`<label style="display:block"><input type="checkbox" class="tool-text" value="${x}" onchange="toggleOtherFields()"> ${x}</label>`).join('')}
+          <div id="otherTextWrap" style="display:none">
+            <label>Diğer Prompt / Metin Aracı</label>
+            <input id="otherTextTool" placeholder="Araç adı">
+          </div>
+        </div>
+        <div>
+          <label>Görsel Üretim</label>
+          ${['Midjourney','Adobe Firefly','DALL·E','Stable Diffusion','Leonardo AI','Diğer'].map(x=>`<label style="display:block"><input type="checkbox" class="tool-image" value="${x}" onchange="toggleOtherFields()"> ${x}</label>`).join('')}
+          <div id="otherImageWrap" style="display:none">
+            <label>Diğer Görsel Üretim Aracı</label>
+            <input id="otherImageTool" placeholder="Araç adı">
+          </div>
+        </div>
+      </div>
+
+      <hr class="sep">
+      <h3>Vize Promptları</h3>
+      <div class="row3">
+        <div>
+          <label>Geçmiş Promptu</label><textarea id="vPast"></textarea>
+          <label>Geçmiş Görseli</label><input type="file" id="vPastImg" accept="image/*">
+        </div>
+        <div>
+          <label>Günümüz Promptu</label><textarea id="vPresent"></textarea>
+          <label>Günümüz Görseli</label><input type="file" id="vPresentImg" accept="image/*">
+        </div>
+        <div>
+          <label>Gelecek Promptu</label><textarea id="vFuture"></textarea>
+          <label>Gelecek Görseli</label><input type="file" id="vFutureImg" accept="image/*">
+        </div>
+      </div>
+
+      <hr class="sep">
+      <h3>Final Promptları</h3>
+      <div class="row3">
+        <div>
+          <label>Geçmiş Promptu</label><textarea id="fPast"></textarea>
+          <label>Geçmiş Görseli</label><input type="file" id="fPastImg" accept="image/*">
+        </div>
+        <div>
+          <label>Günümüz Promptu</label><textarea id="fPresent"></textarea>
+          <label>Günümüz Görseli</label><input type="file" id="fPresentImg" accept="image/*">
+        </div>
+        <div>
+          <label>Gelecek Promptu</label><textarea id="fFuture"></textarea>
+          <label>Gelecek Görseli</label><input type="file" id="fFutureImg" accept="image/*">
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" onclick="addOrUpdateStudent()">${editingId ? 'Güncelle' : 'Öğrenci Ekle'}</button>
+        <button class="btn secondary" onclick="loadSampleData()">Örnek Veri Yükle</button>
+        <button class="btn ghost" onclick="clearForm()">Formu Temizle</button>
+        <button class="btn warn" onclick="clearAllData()">Tümünü Sil</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Kayıtlı Öğrenciler</h2>
+      <p class="sub">Toplam ${students.length} öğrenci</p>
+      ${students.length ? `
+      <div class="table-wrap"><table>
+        <thead><tr><th>Kod</th><th>Eser</th><th>Tür</th><th>YZ Araçları</th><th>Görsel</th><th>İşlem</th></tr></thead>
+        <tbody>
+          ${students.map(s=>{
+            const tools = [...(s.tools.text||[]), ...(s.tools.image||[])];
+            const imgCount = Object.values(s.vize.images).filter(Boolean).length + Object.values(s.final.images).filter(Boolean).length;
+            return `<tr>
+              <td>${s.id}</td>
+              <td>${s.artworkName}</td>
+              <td>${s.artworkType}</td>
+              <td>${tools.map(t=>`<span class="badge">${t}</span>`).join('')}</td>
+              <td>${imgCount}/6</td>
+              <td>
+                <button class="btn ghost" onclick="editStudent('${s.id}')">Düzenle</button>
+                <button class="btn warn" onclick="deleteStudent('${s.id}')">Sil</button>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table></div>` : `<div class="empty">Henüz öğrenci eklenmedi.</div>`}
+    </div>
+  </div>`;
+  if(editingId) fillForm(editingId);
+  setTimeout(toggleOtherFields, 0);
+}
+function clearForm(){
+  editingId = null;
+  ['studentId','artworkName','vPast','vPresent','vFuture','fPast','fPresent','fFuture','otherTextTool','otherImageTool'].forEach(id=>{
+    const x = document.getElementById(id); if(x) x.value='';
+  });
+  ['vPastImg','vPresentImg','vFutureImg','fPastImg','fPresentImg','fFutureImg'].forEach(id=>{
+    const x = document.getElementById(id); if(x) x.value='';
+  });
+  const t = document.getElementById('artworkType'); if(t) t.value = 'film';
+  document.querySelectorAll('.tool-text,.tool-image').forEach(ch=>ch.checked=false);
+  renderDataTab();
+}
+function editStudent(id){ editingId = id; renderDataTab(); }
+function fillForm(id){
+  const s = students.find(x=>x.id===id); if(!s) return;
+  setTimeout(()=>{
+    document.getElementById('studentId').value = s.id || '';
+    document.getElementById('artworkName').value = s.artworkName || '';
+    document.getElementById('artworkType').value = s.artworkType || 'film';
+    document.getElementById('vPast').value = s.vize.past || '';
+    document.getElementById('vPresent').value = s.vize.present || '';
+    document.getElementById('vFuture').value = s.vize.future || '';
+    document.getElementById('fPast').value = s.final.past || '';
+    document.getElementById('fPresent').value = s.final.present || '';
+    document.getElementById('fFuture').value = s.final.future || '';
+
+    const textVals = (s.tools.text||[]).map(v => String(v).startsWith('Diğer: ') ? 'Diğer' : v);
+    const imgVals = (s.tools.image||[]).map(v => String(v).startsWith('Diğer: ') ? 'Diğer' : v);
+    setChecked('.tool-text', textVals);
+    setChecked('.tool-image', imgVals);
+    document.getElementById('otherTextTool').value = extractOther(s.tools.text||[]);
+    document.getElementById('otherImageTool').value = extractOther(s.tools.image||[]);
+    toggleOtherFields();
+  },0);
+}
+async function addOrUpdateStudent(){
+  const id = document.getElementById('studentId').value.trim();
+  if(!id){ alert('Öğrenci kodu gerekli.'); return; }
+
+  const existing = students.find(s => s.id === editingId) || students.find(s => s.id === id);
+  const obj = {
+    id,
+    artworkName: document.getElementById('artworkName').value.trim(),
+    artworkType: document.getElementById('artworkType').value,
+    tools:{
+      text: normalizeTools(collectChecked('.tool-text'), document.getElementById('otherTextTool').value),
+      image: normalizeTools(collectChecked('.tool-image'), document.getElementById('otherImageTool').value),
+    },
+    vize:{
+      past: document.getElementById('vPast').value.trim(),
+      present: document.getElementById('vPresent').value.trim(),
+      future: document.getElementById('vFuture').value.trim(),
+      images:{
+        past: existing?.vize?.images?.past || '',
+        present: existing?.vize?.images?.present || '',
+        future: existing?.vize?.images?.future || ''
+      }
+    },
+    final:{
+      past: document.getElementById('fPast').value.trim(),
+      present: document.getElementById('fPresent').value.trim(),
+      future: document.getElementById('fFuture').value.trim(),
+      images:{
+        past: existing?.final?.images?.past || '',
+        present: existing?.final?.images?.present || '',
+        future: existing?.final?.images?.future || ''
+      }
+    }
+  };
+
+  const files = [
+    ['vize','past','vPastImg'],['vize','present','vPresentImg'],['vize','future','vFutureImg'],
+    ['final','past','fPastImg'],['final','present','fPresentImg'],['final','future','fFutureImg']
+  ];
+  for(const [phase,key,inputId] of files){
+    const file = document.getElementById(inputId).files[0];
+    if(file) obj[phase].images[key] = await fileToStoredImage(file);
+  }
+
+  const idx = students.findIndex(s => s.id === editingId || s.id === id);
+  if(idx >= 0){
+    const oldId = students[idx].id;
+    students[idx] = obj;
+    if(oldId !== id && rubrics[oldId]){
+      rubrics[id] = rubrics[oldId];
+      delete rubrics[oldId];
+    }
+  } else students.push(obj);
+
+  ensureRubric(id);
+  try{
+    await saveStudents();
+    saveRubrics();
+    editingId = null;
+    renderAll();
+  }catch(err){
+    console.error(err);
+    alert('Kayıt sırasında depolama hatası oluştu. Tarayıcı depolama izinlerini kontrol edin.');
+  }
+}
+
+async function deleteStudent(id){
+  students = students.filter(s=>s.id !== id);
+  delete rubrics[id];
+  await idbDelete(id).catch(()=>null);
+  await saveStudents();
+  saveRubrics();
+  if(editingId===id) editingId = null;
+  renderAll();
+}
+async function clearAllData(){
+  if(!confirm('Tüm veriler silinsin mi?')) return;
+  const ids = students.map(s=>s.id);
+  students = []; rubrics = {}; editingId = null;
+  await Promise.all(ids.map(id=>idbDelete(id).catch(()=>null)));
+  await saveStudents();
+  saveRubrics();
+  renderAll();
+}
+async function loadSampleData(){
+  students = [
+    {
+      id:'Ö-01', artworkName:"Howl's Moving Castle", artworkType:'film',
+      tools:{text:['ChatGPT'], image:['Adobe Firefly']},
+      vize:{
+        past:'A walking castle in the mountains from the late 19th century with aged timber and layered handmade additions.',
+        present:'Imagine this castle in 2025 as a dense vertical urban dwelling with modular facades and realistic city context.',
+        future:'A speculative architectural environment shaped by artificial intelligence and advanced energy systems.',
+        images:{past:'',present:'',future:''}
+      },
+      final:{
+        past:'A historical walking castle interior-exterior hybrid with handcrafted timber shells, worn materials, nostalgic atmosphere and layered steampunk construction.',
+        present:'A contemporary vertical castle-like urban structure with realistic glass, metal and modular extensions, integrated into a dense metropolitan skyline.',
+        future:'A speculative energy-driven adaptive architectural organism with autonomous systems, luminous infrastructure and posthuman urban atmosphere.',
+        images:{past:'',present:'',future:''}
+      }
+    },
+    {
+      id:'Ö-02', artworkName:'1984', artworkType:'kitap',
+      tools:{text:['Claude','Diğer: NotebookLM'], image:['Midjourney']},
+      vize:{
+        past:'Old surveillance room with dark walls and authoritarian mood.',
+        present:'Modern control room with screens and cold atmosphere.',
+        future:'Future oppressive chamber with digital tracking.',
+        images:{past:'',present:'',future:''}
+      },
+      final:{
+        past:'Historical authoritarian room with worn surfaces, dim light and oppressive symbolism.',
+        present:'Contemporary surveillance interior with cold lighting, controlled circulation and realistic urban context.',
+        future:'Speculative dystopian chamber with biometric tracking, algorithmic control and oppressive digital atmosphere.',
+        images:{past:'',present:'',future:''}
+      }
+    }
+  ];
+  rubrics = {
+    'Ö-01': {vize:{conceptual:3,prompt:3,temporal:3,ai:3,creativity:3}, final:{conceptual:5,prompt:5,temporal:4,ai:4,creativity:5}},
+    'Ö-02': {vize:{conceptual:2,prompt:2,temporal:2,ai:2,creativity:2}, final:{conceptual:4,prompt:4,temporal:4,ai:4,creativity:4}}
+  };
+  await saveStudents(); saveRubrics(); renderAll();
+}
+
+function renderArtworks(){
+  const el = document.getElementById('tab-artworks');
+  if(!students.length){ el.innerHTML = '<div class="card empty">Veri girişi yapın.</div>'; return; }
+  const counts = {};
+  students.forEach(s => counts[s.artworkType] = (counts[s.artworkType] || 0) + 1);
+  const top = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
+  el.innerHTML = `
+    <div class="grid g4">
+      <div class="stat"><div class="v">${students.length}</div><div class="k">Toplam Öğrenci</div></div>
+      <div class="stat"><div class="v">${Object.keys(counts).length}</div><div class="k">Eser Türü Sayısı</div></div>
+      <div class="stat"><div class="v">${top ? top[0] : '-'}</div><div class="k">En Yoğun Tür</div></div>
+      <div class="stat"><div class="v">${top ? top[1] : 0}</div><div class="k">Frekans</div></div>
+    </div>
+    <div class="grid g22" style="margin-top:16px">
+      <div class="card"><h2>Eser Türü Dağılımı</h2><div class="chartbox"><canvas id="artChart"></canvas></div></div>
+      <div class="card"><h2>Eser Listesi</h2><div class="table-wrap"><table><thead><tr><th>Kod</th><th>Eser</th><th>Tür</th></tr></thead><tbody>${students.map(s=>`<tr><td>${s.id}</td><td>${s.artworkName}</td><td>${s.artworkType}</td></tr>`).join('')}</tbody></table></div></div>
+    </div>`;
+  charts.artChart = new Chart(document.getElementById('artChart'), {
+    type:'bar',
+    data:{labels:Object.keys(counts), datasets:[{data:Object.values(counts), label:'Öğrenci'}]},
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}}
+  });
+}
+
+function renderTools(){
+  const el = document.getElementById('tab-tools');
+  if(!students.length){ el.innerHTML = '<div class="card empty">Veri girişi yapın.</div>'; return; }
+  const freq = {}, groups = {'Tek Araç':0,'İki Araç':0,'3+ Araç':0};
+  students.forEach(s=>{
+    const tools = [...(s.tools.text||[]), ...(s.tools.image||[])];
+    tools.forEach(t=>freq[t] = (freq[t]||0)+1);
+    if(tools.length <= 1) groups['Tek Araç']++;
+    else if(tools.length == 2) groups['İki Araç']++;
+    else groups['3+ Araç']++;
+  });
+  const top = Object.entries(freq).sort((a,b)=>b[1]-a[1])[0];
+  el.innerHTML = `
+    <div class="grid g4">
+      <div class="stat"><div class="v">${(students.reduce((a,s)=>a+([...(s.tools.text||[]),...(s.tools.image||[])].length),0)/students.length).toFixed(1)}</div><div class="k">Ortalama Araç Sayısı</div></div>
+      <div class="stat"><div class="v">${groups['Tek Araç']}</div><div class="k">Tek Araç Kullanan</div></div>
+      <div class="stat"><div class="v">${students.length-groups['Tek Araç']}</div><div class="k">Çoklu Araç Kullanan</div></div>
+      <div class="stat"><div class="v">${top ? top[0] : '-'}</div><div class="k">En Sık Araç</div></div>
+    </div>
+    <div class="grid g22" style="margin-top:16px">
+      <div class="card"><h2>Yapay Zekâ Araç Frekansı</h2><div class="chartbox"><canvas id="toolsChart"></canvas></div></div>
+      <div class="card"><h2>Araç Sayısı Dağılımı</h2><div class="chartbox"><canvas id="toolsPie"></canvas></div></div>
+    </div>`;
+  charts.toolsChart = new Chart(document.getElementById('toolsChart'), {
+    type:'bar',
+    data:{labels:Object.keys(freq), datasets:[{data:Object.values(freq), label:'Kullanım'}]},
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}}
+  });
+  charts.toolsPie = new Chart(document.getElementById('toolsPie'), {
+    type:'pie',
+    data:{labels:Object.keys(groups), datasets:[{data:Object.values(groups)}]},
+    options:{responsive:true, maintainAspectRatio:false}
+  });
+}
+
+function renderPromptSection(kind){
+  const el = document.getElementById(kind==='vize' ? 'tab-vize' : 'tab-final');
+  if(!students.length){ el.innerHTML = '<div class="card empty">Veri girişi yapın.</div>'; return; }
+
+  const analyses = students.map(s=>({id:s.id, artwork:s.artworkName, ...analyzeSet(s[kind]), images:s[kind].images, texts:s[kind]}));
+  const allTokens = {};
+  students.forEach(s=>{
+    ['past','present','future'].forEach(k=>tokenize(s[kind][k]).forEach(t=>allTokens[t]=(allTokens[t]||0)+1));
+  });
+  const top = Object.entries(allTokens).sort((a,b)=>b[1]-a[1]).slice(0,12);
+
+  el.innerHTML = `
+    <div class="grid g4">
+      <div class="stat"><div class="v">${(analyses.reduce((a,b)=>a+b.avgQuality,0)/analyses.length).toFixed(2)}</div><div class="k">Ortalama Prompt Niteliği</div></div>
+      <div class="stat"><div class="v">${(analyses.reduce((a,b)=>a+b.temporalDifferentiation,0)/analyses.length).toFixed(2)}</div><div class="k">Zamansal Ayrışma</div></div>
+      <div class="stat"><div class="v">${(analyses.reduce((a,b)=>a+b.avgWords,0)/analyses.length).toFixed(1)}</div><div class="k">Ortalama Kelime</div></div>
+      <div class="stat"><div class="v">${top[0] ? top[0][0] : '-'}</div><div class="k">En Sık Kavram</div></div>
+    </div>
+
+    <div class="grid g22" style="margin-top:16px">
+      <div class="card"><h2>${kind==='vize'?'Vize':'Final'} En Sık Kavramlar</h2><div class="chartbox"><canvas id="${kind}Chart"></canvas></div></div>
+      <div class="card">
+        <h2>${kind==='vize'?'Vize':'Final'} Prompt Değerlendirme Tablosu</h2>
+        <div class="table-wrap"><table>
+          <thead><tr>
+            <th>Kod</th>
+            <th>Geçmiş Kavramsal Çeşitlilik</th>
+            <th>Geçmiş Zamansal Uygunluk</th>
+            <th>Günümüz Kavramsal Çeşitlilik</th>
+            <th>Günümüz Zamansal Uygunluk</th>
+            <th>Gelecek Kavramsal Çeşitlilik</th>
+            <th>Gelecek Zamansal Uygunluk</th>
+            <th>Ortalama Nitelik</th>
+            <th>Zamansal Ayrışma</th>
+          </tr></thead>
+          <tbody>
+            ${analyses.map(a=>`<tr>
+              <td>${a.id}</td>
+              <td>${a.past.conceptualVariety}</td>
+              <td>${a.past.temporalSuitability}</td>
+              <td>${a.present.conceptualVariety}</td>
+              <td>${a.present.temporalSuitability}</td>
+              <td>${a.future.conceptualVariety}</td>
+              <td>${a.future.temporalSuitability}</td>
+              <td>${a.avgQuality}</td>
+              <td>${a.temporalDifferentiation}</td>
+            </tr>`).join('')}
+          </tbody></table></div>
+      </div>
+    </div>
+
+    ${analyses.map(a=>`
+      <div class="card" style="margin-top:16px">
+        <h2>${a.id} — ${a.artwork} (${kind==='vize'?'Vize':'Final'})</h2>
+        <div class="preview-grid">
+          <div class="preview">
+            <h4>Geçmiş</h4>
+            <div class="img-frame">${renderImage(a.images.past)}</div>
+            <div class="kws">${topKeywords(a.texts.past).map(k=>`<span class="badge kw">${k}</span>`).join('')}</div>
+          </div>
+          <div class="preview">
+            <h4>Günümüz</h4>
+            <div class="img-frame">${renderImage(a.images.present)}</div>
+            <div class="kws">${topKeywords(a.texts.present).map(k=>`<span class="badge kw">${k}</span>`).join('')}</div>
+          </div>
+          <div class="preview">
+            <h4>Gelecek</h4>
+            <div class="img-frame">${renderImage(a.images.future)}</div>
+            <div class="kws">${topKeywords(a.texts.future).map(k=>`<span class="badge kw">${k}</span>`).join('')}</div>
+          </div>
+        </div>
+      </div>`).join('')}
+  `;
+  charts[kind+'Chart'] = new Chart(document.getElementById(kind+'Chart'), {
+    type:'bar',
+    data:{labels:top.map(x=>x[0]), datasets:[{data:top.map(x=>x[1]), label:'Frekans'}]},
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}}
+  });
+}
+
+function renderCompare(){
+  const el = document.getElementById('tab-compare');
+  if(!students.length){ el.innerHTML = '<div class="card empty">Veri girişi yapın.</div>'; return; }
+  const rows = students.map(s=>{
+    const v = analyzeSet(s.vize), f = analyzeSet(s.final);
+    return {id:s.id, artwork:s.artworkName, v, f, imgs:{v:s.vize.images, f:s.final.images}, txt:{v:s.vize,f:s.final}};
+  });
+  el.innerHTML = `
+    <div class="grid g4">
+      <div class="stat"><div class="v">${(rows.reduce((a,b)=>a+(b.f.avgWords-b.v.avgWords),0)/rows.length).toFixed(1)}</div><div class="k">Kelime Artışı</div></div>
+      <div class="stat"><div class="v">${(rows.reduce((a,b)=>a+(b.f.avgUnique-b.v.avgUnique),0)/rows.length).toFixed(1)}</div><div class="k">Tekil Kavram Artışı</div></div>
+      <div class="stat"><div class="v">${(rows.reduce((a,b)=>a+(b.f.avgQuality-b.v.avgQuality),0)/rows.length).toFixed(2)}</div><div class="k">Nitelik Artışı</div></div>
+      <div class="stat"><div class="v">${(rows.reduce((a,b)=>a+(b.f.temporalDifferentiation-b.v.temporalDifferentiation),0)/rows.length).toFixed(2)}</div><div class="k">Zamansal Ayrışma Artışı</div></div>
+    </div>
+
+    <div class="grid g22" style="margin-top:16px">
+      <div class="card"><h2>Prompt Niteliği Karşılaştırması</h2><div class="chartbox"><canvas id="compareQuality"></canvas></div></div>
+      <div class="card"><h2>Zamansal Ayrışma Karşılaştırması</h2><div class="chartbox"><canvas id="compareTemporal"></canvas></div></div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h2>Vize – Final Karşılaştırma Tablosu</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Kod</th><th>Vize Ortalama Kelime</th><th>Final Ortalama Kelime</th><th>Vize Ortalama Nitelik</th><th>Final Ortalama Nitelik</th><th>Vize Zamansal Ayrışma</th><th>Final Zamansal Ayrışma</th></tr></thead>
+        <tbody>${rows.map(r=>`<tr><td>${r.id}</td><td>${r.v.avgWords}</td><td>${r.f.avgWords}</td><td>${r.v.avgQuality}</td><td>${r.f.avgQuality}</td><td>${r.v.temporalDifferentiation}</td><td>${r.f.temporalDifferentiation}</td></tr>`).join('')}</tbody>
+      </table></div>
+    </div>
+
+    ${rows.map(r=>`
+      <div class="card" style="margin-top:16px">
+        <h2>${r.id} — ${r.artwork}</h2>
+        <div class="grid g22">
+          <div>
+            <h3>Vize</h3>
+            <div class="preview-grid">
+              <div class="preview"><h4>Geçmiş</h4><div class="img-frame">${renderImage(r.imgs.v.past)}</div></div>
+              <div class="preview"><h4>Günümüz</h4><div class="img-frame">${renderImage(r.imgs.v.present)}</div></div>
+              <div class="preview"><h4>Gelecek</h4><div class="img-frame">${renderImage(r.imgs.v.future)}</div></div>
+            </div>
+          </div>
+          <div>
+            <h3>Final</h3>
+            <div class="preview-grid">
+              <div class="preview"><h4>Geçmiş</h4><div class="img-frame">${renderImage(r.imgs.f.past)}</div></div>
+              <div class="preview"><h4>Günümüz</h4><div class="img-frame">${renderImage(r.imgs.f.present)}</div></div>
+              <div class="preview"><h4>Gelecek</h4><div class="img-frame">${renderImage(r.imgs.f.future)}</div></div>
+            </div>
+          </div>
+        </div>
+      </div>`).join('')}
+  `;
+  charts.compareQuality = new Chart(document.getElementById('compareQuality'), {
+    type:'bar',
+    data:{labels:rows.map(r=>r.id), datasets:[{label:'Vize', data:rows.map(r=>r.v.avgQuality)}, {label:'Final', data:rows.map(r=>r.f.avgQuality)}]},
+    options:{responsive:true, maintainAspectRatio:false}
+  });
+  charts.compareTemporal = new Chart(document.getElementById('compareTemporal'), {
+    type:'bar',
+    data:{labels:rows.map(r=>r.id), datasets:[{label:'Vize', data:rows.map(r=>r.v.temporalDifferentiation)}, {label:'Final', data:rows.map(r=>r.f.temporalDifferentiation)}]},
+    options:{responsive:true, maintainAspectRatio:false}
+  });
+}
+
+function rubricInputs(studentId, phase){
+  ensureRubric(studentId);
+  const r = rubrics[studentId][phase];
+  return `
+    <div class="rubric-form">
+      <div><label>Kavramsal Aktarım</label><input type="number" min="1" max="5" value="${r.conceptual}" onchange="updateRubric('${studentId}','${phase}','conceptual',this.value)"></div>
+      <div><label>Prompt Niteliği</label><input type="number" min="1" max="5" value="${r.prompt}" onchange="updateRubric('${studentId}','${phase}','prompt',this.value)"></div>
+      <div><label>Zamansal Ayrışma</label><input type="number" min="1" max="5" value="${r.temporal}" onchange="updateRubric('${studentId}','${phase}','temporal',this.value)"></div>
+      <div><label>Yapay Zekâ ile Etkileşim</label><input type="number" min="1" max="5" value="${r.ai}" onchange="updateRubric('${studentId}','${phase}','ai',this.value)"></div>
+      <div><label>Mekânsal Yaratıcılık</label><input type="number" min="1" max="5" value="${r.creativity}" onchange="updateRubric('${studentId}','${phase}','creativity',this.value)"></div>
+      <div><label>Ortalama Puan</label><input type="text" value="${avgRubric(r)}" disabled></div>
+    </div>
+  `;
+}
+function updateRubric(id, phase, key, value){
+  ensureRubric(id);
+  rubrics[id][phase][key] = value === '' ? '' : Number(value);
+  saveRubrics();
+  renderVisible('tab-rubric');
+  renderVisible('tab-findings');
+}
+function rubricPreviewBlock(setObj){
+  return `
+    <div class="preview-grid">
+      <div class="preview">
+        <h4>Geçmiş</h4>
+        <div class="img-frame">${renderImage(setObj.images.past)}</div>
+        <div class="kws">${topKeywords(setObj.past).map(k=>`<span class="badge kw"><strong>${k}</strong></span>`).join('')}</div>
+      </div>
+      <div class="preview">
+        <h4>Günümüz</h4>
+        <div class="img-frame">${renderImage(setObj.images.present)}</div>
+        <div class="kws">${topKeywords(setObj.present).map(k=>`<span class="badge kw"><strong>${k}</strong></span>`).join('')}</div>
+      </div>
+      <div class="preview">
+        <h4>Gelecek</h4>
+        <div class="img-frame">${renderImage(setObj.images.future)}</div>
+        <div class="kws">${topKeywords(setObj.future).map(k=>`<span class="badge kw"><strong>${k}</strong></span>`).join('')}</div>
+      </div>
+    </div>
+  `;
+}
+function renderRubric(){
+  const el = document.getElementById('tab-rubric');
+  if(!students.length){ el.innerHTML = '<div class="card empty">Veri girişi yapın.</div>'; return; }
+
+  const finalRanking = students.map(s=>({id:s.id, avg:avgRubric((rubrics[s.id]||{}).final)})).sort((a,b)=>b.avg-a.avg);
+  const catMeans = ['conceptual','prompt','temporal','ai','creativity'].map(k=>{
+    const vals = students.map(s=>Number((rubrics[s.id]||{}).final?.[k]||0)).filter(v=>v>0);
+    return vals.length ? +(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : 0;
+  });
+
+  el.innerHTML = `
+    <div class="notice">Rubrik puanları araştırmacı tarafından manuel girilir. Rubrik değerlendirmesi, öğrencilerin istemleri ve bu istemlere karşılık üretilen görsel çıktılar birlikte dikkate alınarak yapılır.</div>
+
+    <div class="card"><h2>Vize Analitik Rubrik Değerlendirmesi</h2>
+      ${students.map(s=>`
+        <div class="rubric-card">
+          <div class="rubric-head">
+            <div>
+              <div class="rubric-title">${s.id}</div>
+              <div class="small">${s.artworkName}</div>
+            </div>
+          </div>
+          ${rubricPreviewBlock(s.vize)}
+          ${rubricInputs(s.id,'vize')}
+        </div>`).join('')}
+    </div>
+
+    <div class="card" style="margin-top:16px"><h2>Final Rubrik Değerlendirmesi</h2>
+      ${students.map(s=>`
+        <div class="rubric-card">
+          <div class="rubric-head">
+            <div>
+              <div class="rubric-title">${s.id}</div>
+              <div class="small">${s.artworkName}</div>
+            </div>
+          </div>
+          ${rubricPreviewBlock(s.final)}
+          ${rubricInputs(s.id,'final')}
+        </div>`).join('')}
+    </div>
+
+    <div class="grid g22" style="margin-top:16px">
+      <div class="card"><h2>Final Rubrik Kategori Ortalamaları</h2><div class="chartbox"><canvas id="rubricChart"></canvas></div></div>
+      <div class="card"><h2>Final Ortalama Puanına Göre Öğrenci Sıralaması</h2>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Sıra</th><th>Öğrenci Kodu</th><th>Ortalama Puan</th></tr></thead>
+          <tbody>${finalRanking.map((r,i)=>`<tr><td>${i+1}</td><td>${r.id}</td><td>${r.avg}</td></tr>`).join('')}</tbody>
+        </table></div>
+      </div>
+    </div>
+  `;
+  charts.rubricChart = new Chart(document.getElementById('rubricChart'), {
+    type:'bar',
+    data:{labels:['Kavramsal Aktarım','Prompt Niteliği','Zamansal Ayrışma','Yapay Zekâ ile Etkileşim','Mekânsal Yaratıcılık'], datasets:[{data:catMeans, label:'Ortalama'}]},
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, max:5}}}
+  });
+}
+
+function renderFindings(){
+  const el = document.getElementById('tab-findings');
+  if(!students.length){ el.innerHTML = '<div class="card empty">Veri girişi yapın.</div>'; return; }
+  const v = students.map(s=>analyzeSet(s.vize));
+  const f = students.map(s=>analyzeSet(s.final));
+  const mean = arr => +(arr.reduce((a,b)=>a+b,0)/Math.max(arr.length,1)).toFixed(2);
+  const vQ = mean(v.map(x=>x.avgQuality)), fQ = mean(f.map(x=>x.avgQuality));
+  const vT = mean(v.map(x=>x.temporalDifferentiation)), fT = mean(f.map(x=>x.temporalDifferentiation));
+  const ranking = students.map(s=>({id:s.id, avg:avgRubric((rubrics[s.id]||{}).final)})).sort((a,b)=>b.avg-a.avg);
+  el.innerHTML = `
+    <div class="notice">Aşağıdaki metinler veri temelli taslak yorumlardır. Tez metnine aktarılmadan önce araştırmacı tarafından yeniden yazılmalıdır.</div>
+    <div class="card">
+      <div class="finding"><strong>Prompt gelişimi:</strong> Öğrencilerin final aşamasında ürettikleri promptların ortalama niteliği ${vQ} düzeyinden ${fQ} düzeyine yükselmiştir. Bu bulgu, kavramsal çeşitlilik ve zamansal uygunluk bakımından gelişim olduğunu göstermektedir.</div>
+      <div class="finding"><strong>Zamansal ayrışma:</strong> Vize aşamasında ortalama zamansal ayrışma ${vT}, final aşamasında ise ${fT} olarak hesaplanmıştır. Bu durum, geçmiş, günümüz ve gelecek kurgularının finalde daha belirgin biçimde ayrıştığını düşündürmektedir.</div>
+      <div class="finding"><strong>Rubrik sonucu:</strong> Final rubrik değerlendirmesine göre en yüksek ortalamaya sahip öğrenci <strong>${ranking[0]?.id || '-'}</strong> olmuştur. Bu sıralama yalnızca final ürün üzerinden oluşturulmuştur.</div>
+      <div class="finding"><strong>Yöntemsel çerçeve:</strong> Sistem, yaratıcılığı mutlak olarak ölçen bir araç değil; kavramsal gelişim, istem niteliği, zamansal ayrışma ve görsel üretim ilişkisini görünür kılan çok boyutlu bir değerlendirme çerçevesidir.</div>
+    </div>
+  `;
+}
+
+function renderAll(){
+  renderDataTab();
+  const active = document.querySelector('.tab.active')?.id || 'tab-data';
+  renderVisible(active);
+}
+
+async function initApp(){
+  buildTabs();
+  await loadStudents();
+  loadRubrics();
+  renderAll();
+}
+initApp();
+window.addEventListener('resize', ()=> {
+  const active = document.querySelector('.tab.active')?.id;
+  if(active) setTimeout(()=>renderVisible(active), 120);
+});
+</script>
+</body>
+</html>
