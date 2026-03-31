@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kurgusal Mekân — Araştırma Analiz Sistemi</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,300;0,400;0,600;1,300;1,400&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg: #f7f5f0;
+  --surface: #ffffff;
+  --surface2: #f0ede6;
+  --border: #d8d2c8;
+  --border2: #e8e4dc;
+  --text: #1a1814;
+  --text-mid: #5a5650;
+  --text-dim: #9a9690;
+  --accent: #2c4a6e;
+  --accent-light: #e8eef5;
+  --accent2: #6e3a2c;
+  --accent3: #2c6e4a;
+  --warn: #c8760a;
+  --warn-light: #fdf3e3;
+  --red: #c0392b;
+  --green: #2c6e4a;
+  --green-light: #e8f5ee;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+  --shadow-lg: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13.5px;
+  line-height: 1.65;
+}
+
+/* ── HEADER ── */
+.site-header {
+  background: var(--accent);
+  color: #fff;
+  padding: 0 48px;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  height: 52px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.header-title {
+  font-family: 'IBM Plex Serif', serif;
+  font-size: 15px;
+  font-weight: 400;
+  font-style: italic;
+  color: rgba(255,255,255,0.95);
+  letter-spacing: 0.02em;
+  flex: 1;
+}
+.header-meta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.08em;
+}
+
+/* ── TABS ── */
+.tab-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 48px;
+  display: flex;
+  gap: 0;
+  position: sticky;
+  top: 52px;
+  z-index: 150;
+}
+.tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-dim);
+  padding: 12px 20px;
+  cursor: pointer;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  font-weight: 400;
+  transition: all 0.18s;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--text-mid); }
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 500;
+}
+.tab-num {
+  display: inline-flex;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--accent-light);
+  color: var(--accent);
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  margin-right: 6px;
+}
+.tab-btn.active .tab-num { background: var(--accent); color: #fff; }
+
+/* ── LAYOUT ── */
+.page { display: none; max-width: 1300px; margin: 0 auto; padding: 36px 48px 60px; }
+.page.active { display: block; }
+.page-title {
+  font-family: 'IBM Plex Serif', serif;
+  font-size: 26px;
+  font-weight: 300;
+  color: var(--text);
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+.page-sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+  margin-bottom: 32px;
+}
+.section { margin-bottom: 40px; }
+.section-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border2);
+}
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+.grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+.card-sm { padding: 16px 20px; }
+.card-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 14px;
+}
+
+/* ── STAT BOXES ── */
+.stat-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 20px 24px;
+  box-shadow: var(--shadow);
+}
+.stat-value {
+  font-family: 'IBM Plex Serif', serif;
+  font-size: 38px;
+  font-weight: 300;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.stat-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+.stat-sub {
+  font-size: 11px;
+  color: var(--text-mid);
+  margin-top: 4px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+/* ── FORM ── */
+.form-group { margin-bottom: 14px; }
+.form-label {
+  display: block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--text-mid);
+  margin-bottom: 5px;
+}
+input[type=text], input[type=number], select, textarea {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 11px;
+  border-radius: 4px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  appearance: none;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(44, 74, 110, 0.1);
+}
+textarea { resize: vertical; min-height: 68px; line-height: 1.5; }
+select { cursor: pointer; }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 9px 22px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.btn:hover { background: #3a5f8a; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(44,74,110,0.25); }
+.btn-outline {
+  background: none;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 7px 18px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  transition: all 0.15s;
+}
+.btn-outline:hover { background: var(--accent-light); }
+.btn-ghost {
+  background: none; border: 1px solid var(--border2);
+  color: var(--text-dim); padding: 5px 12px; border-radius: 3px;
+  cursor: pointer; font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+  transition: all 0.15s;
+}
+.btn-ghost:hover { border-color: var(--text-mid); color: var(--text-mid); }
+.btn-del {
+  background: none; border: 1px solid #f0d0cc;
+  color: #c0392b; padding: 4px 10px; border-radius: 3px;
+  cursor: pointer; font-size: 10px; font-family: 'IBM Plex Mono', monospace;
+  transition: all 0.15s;
+}
+.btn-del:hover { background: #c0392b; color: #fff; }
+
+/* ── TABLE ── */
+.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.data-table th {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+.data-table th:hover { color: var(--accent); }
+.data-table th.sorted { color: var(--accent); }
+.data-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--border2);
+  vertical-align: middle;
+}
+.data-table tr:hover td { background: var(--bg); }
+.data-table tr:last-child td { border-bottom: none; }
+
+/* ── BADGES ── */
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 3px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 0.04em;
+}
+.badge-film    { background: #e8eef5; color: #2c4a6e; }
+.badge-kitap   { background: #e8f5ee; color: #2c6e4a; }
+.badge-sanat   { background: #f5e8ee; color: #6e2c4a; }
+.badge-muzik   { background: #f5f0e8; color: #6e4a2c; }
+.badge-diger   { background: var(--surface2); color: var(--text-mid); }
+.badge-high    { background: #e8f5ee; color: #1a6e3a; }
+.badge-mid     { background: #fdf3e3; color: #8a5a00; }
+.badge-low     { background: #fde8e6; color: #8a1a0a; }
+
+/* ── SCORE BAR ── */
+.score-bar { display: flex; align-items: center; gap: 8px; }
+.score-track { flex:1; height:5px; background:var(--border); border-radius:3px; overflow:hidden; }
+.score-fill  { height:100%; border-radius:3px; transition: width 0.4s ease; }
+.score-num   { font-family:'IBM Plex Mono',monospace; font-size:11px; min-width:32px; color:var(--text-mid); }
+
+/* ── DELTA ── */
+.delta { font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:500; }
+.delta-pos { color: var(--green); }
+.delta-neg { color: var(--red); }
+.delta-neu { color: var(--text-dim); }
+
+/* ── PROGRESS CHART ── */
+.progress-row {
+  display: grid; grid-template-columns: 70px 1fr 50px 1fr 60px;
+  gap: 8px; align-items: center; margin-bottom: 10px;
+}
+.progress-label { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--text-dim); }
+.progress-arrow { text-align:center; color:var(--text-dim); font-size:11px; }
+
+/* ── KEYWORD PILL ── */
+.kw-pill {
+  display: inline-block; border-radius: 3px;
+  font-family: 'IBM Plex Mono', monospace; font-weight:400;
+  transition: transform 0.15s; cursor: default;
+  line-height: 1.4; margin: 3px;
+}
+.kw-pill:hover { transform: scale(1.04); }
+
+/* ── CANVAS ── */
+.chart-box { position: relative; }
+.chart-box canvas { display: block; }
+
+/* ── INFO BOX ── */
+.info-box {
+  background: var(--accent-light); border: 1px solid #c0d0e4;
+  border-radius: 4px; padding: 12px 16px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  color: var(--accent); line-height: 1.6; margin-bottom: 20px;
+}
+.warn-box {
+  background: var(--warn-light); border: 1px solid #e8c080;
+  border-radius: 4px; padding: 12px 16px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  color: var(--warn); line-height: 1.6; margin-bottom: 20px;
+}
+
+/* ── FINDING BOX ── */
+.finding {
+  background: var(--surface); border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 4px 4px 0; padding: 14px 18px;
+  margin-bottom: 14px; font-size: 13.5px; line-height: 1.75;
+  color: var(--text-mid);
+}
+.finding strong { color: var(--text); }
+.finding-title {
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 6px;
+}
+
+/* ── CORRELATION SCATTER ── */
+.scatter-wrap { position:relative; }
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align:center; padding:60px 20px; color:var(--text-dim);
+}
+.empty-state .icon { font-size:36px; margin-bottom:12px; opacity:0.4; }
+.empty-state p { font-family:'IBM Plex Mono',monospace; font-size:11px; line-height:1.8; }
+
+/* ── PRINT STYLES ── */
+@media print {
+  .site-header, .tab-bar { display:none; }
+  .page { display:block !important; }
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius:3px; }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+.card { animation: fadeIn 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <span class="header-title">İç Mimarlık Eğitiminde Yapay Zekâ Destekli Mekânsal Kurgu — Araştırma Analiz Sistemi</span>
+  <span class="header-meta">MSGSU · YL TEZİ · 2026</span>
+</header>
+
+<!-- TAB BAR -->
+<nav class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('input',this)"><span class="tab-num">1</span>VERİ GİRİŞİ</button>
+  <button class="tab-btn" onclick="switchTab('rubric',this)"><span class="tab-num">2</span>RUBRİK ANALİZİ</button>
+  <button class="tab-btn" onclick="switchTab('compare',this)"><span class="tab-num">3</span>VİZE / FİNAL</button>
+  <button class="tab-btn" onclick="switchTab('prompt',this)"><span class="tab-num">4</span>PROMPT ANALİZİ</button>
+  <button class="tab-btn" onclick="switchTab('temporal',this)"><span class="tab-num">5</span>ZAMANSAL ANALİZ</button>
+  <button class="tab-btn" onclick="switchTab('correlation',this)"><span class="tab-num">6</span>KAVRAM–YARATICILIK</button>
+  <button class="tab-btn" onclick="switchTab('findings',this)"><span class="tab-num">7</span>BULGULAR</button>
+</nav>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE 1 — VERİ GİRİŞİ
+══════════════════════════════════════════════════ -->
+<div id="page-input" class="page active">
+  <h1 class="page-title">Öğrenci Verisi Girişi</h1>
+  <p class="page-sub">RUBRIC_SCALE: 1–5 · KATEGORİLER: Kavramsal Aktarım · Prompt Niteliği · Zamansal Ayrışma · YZ Etkileşimi · Mekânsal Yaratıcılık</p>
+
+  <div class="grid-2" style="margin-bottom:24px;">
+    <!-- ADD FORM -->
+    <div class="card">
+      <div class="card-title">Yeni Öğrenci Ekle</div>
+
+      <div class="form-group">
+        <label class="form-label">Öğrenci Kodu</label>
+        <input type="text" id="f-id" placeholder="Ö-01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Seçilen Eser</label>
+        <input type="text" id="f-work" placeholder="Eser adı">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Eser Türü</label>
+        <select id="f-type">
+          <option value="film">Film</option>
+          <option value="kitap">Kitap / Roman</option>
+          <option value="sanat">Görsel Sanat</option>
+          <option value="muzik">Müzik</option>
+          <option value="diger">Diğer</option>
+        </select>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:12px;">
+        <div>
+          <div class="card-title" style="margin-bottom:10px;color:var(--warn);">VİZE PUANLARI (1–5)</div>
+          <div class="form-group">
+            <label class="form-label">Kavramsal Aktarım</label>
+            <input type="number" id="v-ka" min="1" max="5" placeholder="1-5">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Prompt Niteliği</label>
+            <input type="number" id="v-pn" min="1" max="5" placeholder="1-5">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Zamansal Ayrışma</label>
+            <input type="number" id="v-za" min="1" max="5" placeholder="1-5">
+          </div>
+          <div class="form-group">
+            <label class="form-label">YZ Etkileşimi</label>
+            <input type="number" id="v-ye" min="1" max="5" placeholder="1-5">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Mekânsal Yaratıcılık</label>
+            <input type="number" id="v-my" min="1" max="5" placeholder="1-5">
+          </div>
+        </div>
+        <div>
+          <div class="card-title" style="margin-bottom:10px;color:var(--accent);">FİNAL PUANLARI (1–5)</div>
+          <div class="form-group">
+            <label class="form-label">Kavramsal Aktarım</label>
+            <input type="number" id="f-ka" min="1" max="5" placeholder="1-5">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Prompt Niteliği</label>
+            <input type="number" id="f-pn" min="1" max="5" placeholder="1-5">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Zamansal Ayrışma</label>
+            <input type="number" id="f-za" min="1" max="5" placeholder="1-5">
+          </div>
+          <div class="form-group">
+            <label class="form-label">YZ Etkileşimi</label>
+            <input type="number" id="f-ye" min="1" max="5" placeholder="1-5">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Mekânsal Yaratıcılık</label>
+            <input type="number" id="f-my" min="1" max="5" placeholder="1-5">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Final Promptu (metin)</label>
+        <textarea id="f-prompt" placeholder="Öğrencinin final aşamasında kullandığı prompt metni..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Anahtar Kavramlar (virgülle)</label>
+        <input type="text" id="f-kw" placeholder="ışık, beton, melankoli, gelecek...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Zamansal Ayrışma Notu (geçmiş/bugün/gelecek başarısı)</label>
+        <select id="f-temporal">
+          <option value="strong">Güçlü — Üç dönem net ayrışmış</option>
+          <option value="medium">Orta — Kısmi ayrışma mevcut</option>
+          <option value="weak">Zayıf — Dönemler birbirine benzer</option>
+        </select>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="btn" onclick="addStudent()">+ Öğrenci Ekle</button>
+        <button class="btn-outline" onclick="loadSample()">Örnek Veri Yükle</button>
+        <button class="btn-ghost" onclick="clearAll()" style="margin-left:auto;">Temizle</button>
+      </div>
+    </div>
+
+    <!-- STUDENT LIST -->
+    <div class="card">
+      <div class="card-title">Kayıtlı Öğrenciler &nbsp; <span id="n-count" style="color:var(--accent);font-size:13px;font-family:'IBM Plex Serif',serif;font-style:italic;">0</span></div>
+      <div id="student-table-wrap" style="overflow:auto;max-height:640px;">
+        <div class="empty-state">
+          <div class="icon">⬚</div>
+          <p>Henüz öğrenci eklenmedi.<br>Formu doldurun veya<br>Örnek Veriyi yükleyin.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE 2 — RUBRİK ANALİZİ
+══════════════════════════════════════════════════ -->
+<div id="page-rubric" class="page">
+  <h1 class="page-title">Rubrik Analizi</h1>
+  <p class="page-sub">KATEGORİ ORTALAMALARI · SIRALAMA · PUAN DAĞILIMI · GÜÇLÜ / ZAYIF KATEGORİLER</p>
+
+  <div id="rubric-empty" class="empty-state card" style="display:none"><div class="icon">⬚</div><p>Veri girişi yapın.</p></div>
+  <div id="rubric-content">
+    <div class="grid-4" id="rubric-stats" style="margin-bottom:24px;"></div>
+    <div class="grid-2" style="margin-bottom:24px;">
+      <div class="card">
+        <div class="card-title">Kategori Ortalamaları — Final (1–5)</div>
+        <div class="chart-box"><canvas id="c-cat-avg" height="240"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Öğrenci Final Puanları — Radar</div>
+        <div class="chart-box"><canvas id="c-radar" height="240"></canvas></div>
+      </div>
+    </div>
+    <div class="card section">
+      <div class="card-title">Öğrenci Sıralaması — Final Toplam Puanı</div>
+      <div id="ranking-table" style="overflow-x:auto;"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Puan Dağılımı — Histogram (Final Toplam)</div>
+      <div class="chart-box"><canvas id="c-hist" height="180"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE 3 — VİZE / FİNAL KARŞILAŞTIRMA
+══════════════════════════════════════════════════ -->
+<div id="page-compare" class="page">
+  <h1 class="page-title">Vize → Final Karşılaştırması</h1>
+  <p class="page-sub">GELİŞİM ANALİZİ · ORTALAMA ARTIŞ · EN YÜKSEK / EN DÜŞÜK GELİŞİM</p>
+
+  <div id="compare-empty" class="empty-state card" style="display:none"><div class="icon">⬚</div><p>Veri girişi yapın.</p></div>
+  <div id="compare-content">
+    <div class="grid-4" id="compare-stats" style="margin-bottom:24px;"></div>
+    <div class="grid-2" style="margin-bottom:24px;">
+      <div class="card">
+        <div class="card-title">Öğrenci Bazında Gelişim (Vize → Final)</div>
+        <div class="chart-box"><canvas id="c-improvement" height="260"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Kategori Bazında Ortalama Değişim</div>
+        <div class="chart-box"><canvas id="c-cat-change" height="260"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Detaylı Karşılaştırma Tablosu</div>
+      <div id="compare-table" style="overflow-x:auto;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE 4 — PROMPT ANALİZİ
+══════════════════════════════════════════════════ -->
+<div id="page-prompt" class="page">
+  <h1 class="page-title">Prompt İçerik Analizi</h1>
+  <p class="page-sub">ANAHTAR KAVRAMLAR · KATEGORİ DAĞILIMI · KELİME FREKANSSI</p>
+
+  <div id="prompt-empty" class="empty-state card" style="display:none"><div class="icon">⬚</div><p>Veri girişi yapın.</p></div>
+  <div id="prompt-content">
+    <div class="card section">
+      <div class="card-title">Kavram Bulutu — Frekans Ağırlıklı</div>
+      <div id="kw-cloud" style="padding:12px 0;min-height:80px;"></div>
+    </div>
+    <div class="grid-2" style="margin-bottom:24px;">
+      <div class="card">
+        <div class="card-title">Kategori Dağılımı</div>
+        <div class="chart-box"><canvas id="c-kw-cat" height="240"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">En Çok Kullanılan 10 Kavram</div>
+        <div class="chart-box"><canvas id="c-kw-top" height="240"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Prompt Kavram Zenginliği — Öğrenci Bazında</div>
+      <div id="prompt-richness-table" style="overflow-x:auto;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE 5 — ZAMANSAL ANALİZ
+══════════════════════════════════════════════════ -->
+<div id="page-temporal" class="page">
+  <h1 class="page-title">Zamansal Tasarım Analizi</h1>
+  <p class="page-sub">GEÇMİŞ / BUGÜN / GELECEK KURGUSU · AYIRIŞMA BAŞARISI · KATEGORİ DAĞILIMI</p>
+
+  <div id="temporal-empty" class="empty-state card" style="display:none"><div class="icon">⬚</div><p>Veri girişi yapın.</p></div>
+  <div id="temporal-content">
+    <div class="grid-3" id="temporal-stats" style="margin-bottom:24px;"></div>
+    <div class="grid-2" style="margin-bottom:24px;">
+      <div class="card">
+        <div class="card-title">Zamansal Ayrışma Başarısı — Dağılım</div>
+        <div class="chart-box"><canvas id="c-temporal-pie" height="240"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Zamansal Ayrışma Puanı vs Final Toplam</div>
+        <div class="chart-box"><canvas id="c-temporal-bar" height="240"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Zamansal Ayrışma Performansı — Öğrenci Listesi</div>
+      <div id="temporal-table" style="overflow-x:auto;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE 6 — KAVRAM–YARATICILIK İLİŞKİSİ
+══════════════════════════════════════════════════ -->
+<div id="page-correlation" class="page">
+  <h1 class="page-title">Kavramsal Derinlik — Yaratıcılık İlişkisi</h1>
+  <p class="page-sub">PROMPT ZENGİNLİĞİ × MEKÂNSAL YARATICILIK · GRUPLAR · YORUMLAMA</p>
+
+  <div id="corr-empty" class="empty-state card" style="display:none"><div class="icon">⬚</div><p>Veri girişi yapın.</p></div>
+  <div id="corr-content">
+    <div class="grid-2" style="margin-bottom:24px;">
+      <div class="card">
+        <div class="card-title">Kavramsal Derinlik × Mekânsal Yaratıcılık — Dağılım Grafiği</div>
+        <div class="chart-box"><canvas id="c-scatter" height="280"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Kavramsal Derinlik × Toplam Final Puanı</div>
+        <div class="chart-box"><canvas id="c-scatter2" height="280"></canvas></div>
+      </div>
+    </div>
+    <div class="card section">
+      <div class="card-title">Quadrant Analizi — Dört Grup</div>
+      <div id="quadrant-table" style="overflow-x:auto;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE 7 — BULGULAR
+══════════════════════════════════════════════════ -->
+<div id="page-findings" class="page">
+  <h1 class="page-title">Araştırma Bulguları</h1>
+  <p class="page-sub">VERİYE DAYALI OTOMATİK BULGU METİNLERİ · TEZ BÖLÜM 4 REFERANSI</p>
+
+  <div class="warn-box">⚑ Aşağıdaki bulgular sisteme girilen verilere göre otomatik üretilmiştir. Akademik metne aktarılmadan önce araştırmacı tarafından gözden geçirilmeli ve kendi akademik üslubuyla yeniden yazılmalıdır.</div>
+
+  <div id="findings-empty" class="empty-state card" style="display:none"><div class="icon">⬚</div><p>Veri girişi yapın.</p></div>
+  <div id="findings-content"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════ -->
+<script>
+// ─── DATA ─────────────────────────────────────────────────────────────────────
+let DB = [];
+let sortState = { col: null, dir: 1 };
+const CHARTS = {};
+
+const CRIT_KEYS  = ['ka','pn','za','ye','my'];
+const CRIT_NAMES = ['Kavramsal Aktarım','Prompt Niteliği','Zamansal Ayrışma','YZ Etkileşimi','Mekânsal Yaratıcılık'];
+const TUR_NAMES  = {film:'Film',kitap:'Kitap',sanat:'Görsel Sanat',muzik:'Müzik',diger:'Diğer'};
+const TUR_BADGE  = {film:'badge-film',kitap:'badge-kitap',sanat:'badge-sanat',muzik:'badge-muzik',diger:'badge-diger'};
+
+const KW_CATS = {
+  'Atmosfer / Duygu': ['ışık','karanlık','gölge','melankoli','hüzün','korku','umut','gerilim','belirsizlik','yalnızlık','sessizlik','huzur','kaygı','duygu','mood','dark','light','atmosphere','tension','melancholy'],
+  'Malzeme / Doku':   ['beton','ahşap','cam','metal','taş','toprak','kumaş','pas','kil','doku','concrete','wood','glass','steel','stone','material','texture','raw','marble'],
+  'Zaman / Bellek':   ['geçmiş','gelecek','anı','iz','kalıntı','nostalji','tarihsel','dönem','past','future','memory','trace','ruin','archaeological','temporal'],
+  'Teknoloji':        ['teknoloji','dijital','yapay','hologram','fütüristik','siber','robot','veri','ekran','digital','technology','ai','holographic','futuristic','cyber'],
+  'İktidar / Anlam':  ['iktidar','güç','hiyerarşi','kontrol','özgürlük','sembol','ritüel','anlam','power','hierarchy','symbol','ritual','authority','freedom'],
+  'Mekânsal Form':    ['mekân','koridor','oda','boşluk','katman','ölçek','sınır','açık','kapalı','space','room','corridor','void','layer','scale','open','closed','threshold'],
+};
+
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+const clamp = (v,lo,hi) => Math.min(hi, Math.max(lo, v));
+const avg   = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
+const round1 = v => Math.round(v*10)/10;
+
+function total(rubrik) { return CRIT_KEYS.reduce((a,k) => a+(rubrik[k]||0),0); }
+function getN(id)      { const v=parseInt(document.getElementById(id).value); return isNaN(v)?null:clamp(v,1,5); }
+function get(id)       { return document.getElementById(id).value.trim(); }
+
+function kwRichness(student) {
+  const from_kw = student.keywords.length;
+  const from_prompt = student.prompt ? student.prompt.split(/\s+/).filter(w=>w.length>3).length : 0;
+  return from_kw + Math.floor(from_prompt / 8);
+}
+
+function destroyChart(key) {
+  if (CHARTS[key]) { CHARTS[key].destroy(); delete CHARTS[key]; }
+}
+
+function levelBadge(score, max) {
+  const pct = score / max;
+  if (pct >= 0.75) return `<span class="badge badge-high">Yüksek</span>`;
+  if (pct >= 0.45) return `<span class="badge badge-mid">Orta</span>`;
+  return `<span class="badge badge-low">Düşük</span>`;
+}
+
+// ─── SWITCH TAB ───────────────────────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  btn.classList.add('active');
+  if (name==='rubric')      buildRubric();
+  if (name==='compare')     buildCompare();
+  if (name==='prompt')      buildPrompt();
+  if (name==='temporal')    buildTemporal();
+  if (name==='correlation') buildCorrelation();
+  if (name==='findings')    buildFindings();
+}
+
+// ─── STUDENT CRUD ─────────────────────────────────────────────────────────────
+function addStudent() {
+  const id = get('f-id');
+  const work = get('f-work');
+  if (!id || !work) { alert('Öğrenci kodu ve eser adı zorunludur.'); return; }
+  if (DB.find(s=>s.id===id)) { alert('Bu kod zaten kayıtlı.'); return; }
+
+  const kwStr = get('f-kw');
+  DB.push({
+    id, work, type: get('f-type'),
+    prompt: get('f-prompt'),
+    keywords: kwStr ? kwStr.split(',').map(k=>k.trim().toLowerCase()).filter(Boolean) : [],
+    temporal: get('f-temporal') || 'medium',
+    v: { ka:getN('v-ka'), pn:getN('v-pn'), za:getN('v-za'), ye:getN('v-ye'), my:getN('v-my') },
+    f: { ka:getN('f-ka'), pn:getN('f-pn'), za:getN('f-za'), ye:getN('f-ye'), my:getN('f-my') },
+  });
+
+  ['f-id','f-work','f-prompt','f-kw','v-ka','v-pn','v-za','v-ye','v-my','f-ka','f-pn','f-za','f-ye','f-my'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('f-type').value='film';
+  document.getElementById('f-temporal').value='medium';
+  renderStudentList();
+}
+
+function removeStudent(id) {
+  DB = DB.filter(s=>s.id!==id);
+  renderStudentList();
+}
+
+function clearAll() {
+  if (!DB.length || confirm('Tüm veri silinsin mi?')) { DB=[]; renderStudentList(); }
+}
+
+function renderStudentList() {
+  document.getElementById('n-count').textContent = DB.length;
+  const wrap = document.getElementById('student-table-wrap');
+  if (!DB.length) {
+    wrap.innerHTML=`<div class="empty-state"><div class="icon">⬚</div><p>Henüz öğrenci eklenmedi.</p></div>`;
+    return;
+  }
+  let h=`<table class="data-table"><tr>
+    <th>Kod</th><th>Eser</th><th>Tür</th>
+    <th>V.Top</th><th>F.Top</th><th>Δ</th><th>Seviye</th><th></th>
+  </tr>`;
+  DB.forEach(s=>{
+    const vT=total(s.v), fT=total(s.f), d=fT-vT;
+    h+=`<tr>
+      <td><b style="font-family:'IBM Plex Mono',monospace;">${s.id}</b></td>
+      <td style="font-size:12px;max-width:110px;">${s.work}</td>
+      <td><span class="badge ${TUR_BADGE[s.type]}">${TUR_NAMES[s.type]}</span></td>
+      <td style="font-family:'IBM Plex Mono',monospace;font-size:12px;">${vT}/25</td>
+      <td style="font-family:'IBM Plex Mono',monospace;font-size:12px;">${fT}/25</td>
+      <td><span class="delta ${d>0?'delta-pos':d<0?'delta-neg':'delta-neu'}">${d>0?'+':''}${d}</span></td>
+      <td>${levelBadge(fT,25)}</td>
+      <td><button class="btn-del" onclick="removeStudent('${s.id}')">✕</button></td>
+    </tr>`;
+  });
+  wrap.innerHTML = h+'</table>';
+}
+
+// ─── SAMPLE DATA ──────────────────────────────────────────────────────────────
+function loadSample() {
+  DB = [
+    {id:'Ö-01',work:'Parasite',type:'film',temporal:'strong',
+     keywords:['sınıf','katman','karanlık','beton','gizem','hiyerarşi','su','çürüme'],
+     prompt:'A stratified interior symbolizing class division — upper floors gleaming minimal marble, lower floors raw concrete with narrow corridors, harsh fluorescent light, vertical hierarchy, social entrapment, cinematic tension 2024',
+     v:{ka:2,pn:1,za:2,ye:2,my:2},f:{ka:5,pn:5,za:4,ye:4,my:5}},
+    {id:'Ö-02',work:'Stalker (Tarkovsky)',type:'film',temporal:'strong',
+     keywords:['belirsizlik','doğa','yıkım','anlam','zaman','sis','su','ruh'],
+     prompt:'Post-apocalyptic liminal space where nature reclaims architecture — overgrown concrete ruins, diffused mist, ochre reflections, Tarkovsky\'s Zone: ambiguity, spiritual search, temporal collapse, hyperrealistic cinematic',
+     v:{ka:2,pn:2,za:3,ye:2,my:3},f:{ka:5,pn:5,za:5,ye:5,my:5}},
+    {id:'Ö-03',work:'1984 (Orwell)',type:'kitap',temporal:'medium',
+     keywords:['gözetim','kontrol','gri','baskı','iktidar','tekrar'],
+     prompt:'Brutalist surveillance chamber — raw grey concrete, telescreen panels, single harsh overhead light, no windows, oppressive scale, perpetual observation',
+     v:{ka:2,pn:2,za:2,ye:2,my:2},f:{ka:3,pn:3,za:3,ye:3,my:3}},
+    {id:'Ö-04',work:'Blade Runner 2049',type:'film',temporal:'strong',
+     keywords:['neon','yağmur','kimlik','yalnızlık','fütürizm','hologram','cam'],
+     prompt:'Near-future interior suffused in neon pink and cold blue haze — holographic debris, rain-streaked floor-to-ceiling windows, minimalist furniture, existential emptiness questioning identity, neo-noir cinematic',
+     v:{ka:2,pn:2,za:3,ye:3,my:3},f:{ka:5,pn:5,za:5,ye:5,my:5}},
+    {id:'Ö-05',work:'Frida Kahlo',type:'sanat',temporal:'medium',
+     keywords:['renk','acı','beden','kültür','sembol','ayna','çiçek'],
+     prompt:'Interior saturated with Kahlo\'s visual language — deep Mexican teals, terracotta, symbolic objects: ex-votos, Aztec motifs, mirrors, flowers; tension between pain and vitality, layered cultural identity',
+     v:{ka:2,pn:2,za:2,ye:2,my:3},f:{ka:4,pn:4,za:3,ye:3,my:4}},
+    {id:'Ö-06',work:'Interstellar',type:'film',temporal:'strong',
+     keywords:['uzay','zaman','aile','ışık','boyut','yerçekimi','sonsuzluk'],
+     prompt:'Tesseract-inspired interior collapsing linear time — bookshelves extending into infinite dimensions, light bending through translucent membranes, warm amber and cold void coexisting, gravity distortion',
+     v:{ka:1,pn:2,za:2,ye:2,my:2},f:{ka:3,pn:3,za:4,ye:3,my:3}},
+    {id:'Ö-07',work:'Murakami — Kör Söğüt',type:'kitap',temporal:'medium',
+     keywords:['belirsizlik','sıradan','kayıp','boşluk','sessizlik','oda'],
+     prompt:'Liminal Japanese interior suspended between mundane reality and dreamscape — tatami, sliding shoji diffusing grey light, single willow branch, absence made tangible, Murakamian ambiguity',
+     v:{ka:2,pn:2,za:2,ye:2,my:3},f:{ka:3,pn:3,za:3,ye:3,my:3}},
+    {id:'Ö-08',work:'The Shining',type:'film',temporal:'medium',
+     keywords:['korku','labirent','yalnızlık','tekrar','baskı','simetri','altın'],
+     prompt:'Overlook Hotel 2024 — hexagonal carpet geometry bleeding into walls, impossible symmetry warping perception, gold-amber warmth masking dread, isolation, psychological imprisonment, Kubrickian one-point perspective',
+     v:{ka:2,pn:3,za:2,ye:2,my:3},f:{ka:4,pn:4,za:3,ye:3,my:4}},
+    {id:'Ö-09',work:'Monet — Nilüferler',type:'sanat',temporal:'weak',
+     keywords:['doğa','renk','yansıma','an','su','izlenimcilik'],
+     prompt:'Interior dissolving boundaries — walls painted as living water-reflections in Monet\'s palette, lily pads as floor motifs, impressionist light, architecture dematerializing into colour',
+     v:{ka:2,pn:2,za:1,ye:2,my:2},f:{ka:3,pn:3,za:2,ye:2,my:3}},
+    {id:'Ö-10',work:'Her (Spike Jonze)',type:'film',temporal:'medium',
+     keywords:['yalnızlık','teknoloji','bağ','pastel','yakınlık','ses','boşluk'],
+     prompt:'Near-future domestic interior — warm peach and ivory, curved edges, absence of screens except one glowing earpiece, tactile fabrics against cold human absence, technology as intimacy and loneliness',
+     v:{ka:2,pn:2,za:2,ye:2,my:2},f:{ka:3,pn:3,za:3,ye:3,my:3}},
+    {id:'Ö-11',work:'Annihilation',type:'film',temporal:'strong',
+     keywords:['doğa','mutasyon','kayıp','ayna','belirsizlik','biyoloji','kristal'],
+     prompt:'The Shimmer as architectural space — walls crystallizing into prismatic biological formations, humanoid plant forms emerging from concrete, bioluminescent moss, mirrors reflecting impossible perspectives',
+     v:{ka:1,pn:2,za:2,ye:2,my:2},f:{ka:5,pn:5,za:5,ye:5,my:5}},
+    {id:'Ö-12',work:'Dune (Villeneuve)',type:'film',temporal:'strong',
+     keywords:['güç','çöl','ritüel','minimal','iktidar','kum','otorite'],
+     prompt:'Arrakeen throne chamber 2024 — monolithic raw sandstone, oppressive scale, single shaft of diagonal light cutting darkness, ceremonial emptiness, minimal objects maximum ideological weight',
+     v:{ka:2,pn:3,za:3,ye:3,my:3},f:{ka:5,pn:5,za:5,ye:5,my:5}},
+    {id:'Ö-13',work:'Inception',type:'film',temporal:'weak',
+     keywords:['rüya','katman','mimari','yerçekimi','bilinçdışı'],
+     prompt:'Dreamscape architecture with folding city blocks and impossible gravity, layered realities, brutalist towers bending, monochromatic palette',
+     v:{ka:2,pn:2,za:1,ye:1,my:2},f:{ka:2,pn:2,za:2,ye:2,my:2}},
+    {id:'Ö-14',work:'Van Gogh — Yıldızlı Gece',type:'sanat',temporal:'medium',
+     keywords:['hareket','renk','ritim','gece','enerji','sarı','mavi'],
+     prompt:'Interior where Van Gogh\'s swirling brushwork becomes spatial — undulating wall surfaces, cobalt blues and golden yellows, light fixtures echoing cypress spirals, restless energy made architectural',
+     v:{ka:2,pn:2,za:2,ye:2,my:3},f:{ka:4,pn:3,za:3,ye:3,my:4}},
+  ];
+  renderStudentList();
+}
+
+// ─── BUILD RUBRIC ─────────────────────────────────────────────────────────────
+function buildRubric() {
+  const show = DB.length > 0;
+  document.getElementById('rubric-empty').style.display = show?'none':'block';
+  document.getElementById('rubric-content').style.display = show?'block':'none';
+  if (!show) return;
+
+  const fScores = DB.map(s=>total(s.f));
+  const avgF = avg(fScores);
+  const high = DB.filter(s=>total(s.f)>=19).length;
+  const mid  = DB.filter(s=>total(s.f)>=12&&total(s.f)<19).length;
+  const low  = DB.filter(s=>total(s.f)<12).length;
+  const catAvgs = CRIT_KEYS.map(k => round1(avg(DB.map(s=>s.f[k]||0))));
+  const bestCat = catAvgs.indexOf(Math.max(...catAvgs));
+  const weakCat = catAvgs.indexOf(Math.min(...catAvgs));
+
+  document.getElementById('rubric-stats').innerHTML = `
+    <div class="stat-box"><div class="stat-value" style="color:var(--accent)">${round1(avgF)}<span style="font-size:18px;color:var(--text-dim)">/25</span></div><div class="stat-label">Ort. Final Puanı</div></div>
+    <div class="stat-box"><div class="stat-value" style="color:var(--green)">${high}</div><div class="stat-label">Yüksek Performans</div><div class="stat-sub">≥19 puan</div></div>
+    <div class="stat-box"><div class="stat-value" style="color:var(--warn)">${mid}</div><div class="stat-label">Orta Performans</div><div class="stat-sub">12–18 puan</div></div>
+    <div class="stat-box"><div class="stat-value" style="color:var(--red)">${low}</div><div class="stat-label">Düşük Performans</div><div class="stat-sub">&lt;12 puan</div></div>
+  `;
+
+  // Category avg bar
+  destroyChart('catAvg');
+  CHARTS['catAvg'] = new Chart(document.getElementById('c-cat-avg'),{
+    type:'bar',
+    data:{
+      labels: CRIT_NAMES.map((n,i)=>[n, `${catAvgs[i]}/5`]),
+      datasets:[{
+        label:'Final Ortalaması',
+        data: catAvgs,
+        backgroundColor: catAvgs.map((v,i)=>i===bestCat?'rgba(44,110,74,0.8)':i===weakCat?'rgba(192,57,43,0.7)':'rgba(44,74,110,0.7)'),
+        borderWidth:0, borderRadius:3
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>`Ort: ${c.raw}/5`}}},
+      scales:{
+        x:{ticks:{color:'#888',font:{family:'IBM Plex Mono',size:9}},grid:{display:false}},
+        y:{min:0,max:5,ticks:{stepSize:1,color:'#888',font:{family:'IBM Plex Mono',size:10}},grid:{color:'#e8e4dc'}}
+      }
+    }
+  });
+
+  // Radar — top 5 students
+  const top5 = [...DB].sort((a,b)=>total(b.f)-total(a.f)).slice(0,5);
+  destroyChart('radar');
+  CHARTS['radar'] = new Chart(document.getElementById('c-radar'),{
+    type:'radar',
+    data:{
+      labels: CRIT_NAMES.map(n=>n.split(' ')[0]),
+      datasets: top5.map((s,i)=>{
+        const colors=['#2c4a6e','#2c6e4a','#6e3a2c','#6e2c4a','#4a6e2c'];
+        return {label:s.id, data:CRIT_KEYS.map(k=>s.f[k]||0), borderColor:colors[i], backgroundColor:colors[i]+'22', pointBackgroundColor:colors[i], borderWidth:1.5, pointRadius:3};
+      })
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#555',font:{family:'IBM Plex Mono',size:9},boxWidth:8}}},
+      scales:{r:{min:0,max:5,ticks:{stepSize:1,color:'#aaa',font:{family:'IBM Plex Mono',size:9},backdropColor:'transparent'},
+        grid:{color:'#e8e4dc'},pointLabels:{color:'#555',font:{family:'IBM Plex Sans',size:11}}}}
+    }
+  });
+
+  // Ranking table
+  const sorted = [...DB].sort((a,b)=>total(b.f)-total(a.f));
+  let h=`<table class="data-table"><tr>
+    <th onclick="sortTable('rank')">#</th>
+    <th>Kod</th><th>Eser</th>
+    ${CRIT_NAMES.map(n=>`<th>${n.split(' ')[0]}</th>`).join('')}
+    <th>Toplam</th><th>Seviye</th>
+  </tr>`;
+  sorted.forEach((s,i)=>{
+    const fT=total(s.f);
+    h+=`<tr>
+      <td style="font-family:'IBM Plex Mono',monospace;color:var(--text-dim);">${i+1}</td>
+      <td><b style="font-family:'IBM Plex Mono',monospace;">${s.id}</b></td>
+      <td style="font-size:12px;">${s.work}</td>
+      ${CRIT_KEYS.map(k=>`<td style="font-family:'IBM Plex Mono',monospace;text-align:center;">${s.f[k]||'—'}</td>`).join('')}
+      <td style="font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--accent);">${fT}/25</td>
+      <td>${levelBadge(fT,25)}</td>
+    </tr>`;
+  });
+  document.getElementById('ranking-table').innerHTML = h+'</table>';
+
+  // Histogram
+  const bins = [[5,9],[10,12],[13,15],[16,18],[19,22],[23,25]];
+  const binLabels = bins.map(([a,b])=>`${a}–${b}`);
+  const binCounts = bins.map(([a,b])=>fScores.filter(v=>v>=a&&v<=b).length);
+  destroyChart('hist');
+  CHARTS['hist'] = new Chart(document.getElementById('c-hist'),{
+    type:'bar',
+    data:{labels:binLabels,datasets:[{data:binCounts,backgroundColor:'rgba(44,74,110,0.65)',borderWidth:0,borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#888',font:{family:'IBM Plex Mono',size:10}},grid:{display:false}},
+              y:{ticks:{stepSize:1,color:'#888',font:{family:'IBM Plex Mono',size:10}},grid:{color:'#e8e4dc'}}}
+    }
+  });
+}
+
+// ─── BUILD COMPARE ────────────────────────────────────────────────────────────
+function buildCompare() {
+  const show = DB.length > 0;
+  document.getElementById('compare-empty').style.display = show?'none':'block';
+  document.getElementById('compare-content').style.display = show?'block':'none';
+  if (!show) return;
+
+  const deltas = DB.map(s=>total(s.f)-total(s.v));
+  const avgDelta = round1(avg(deltas));
+  const improved = DB.filter((_,i)=>deltas[i]>0).length;
+  const biggestI = deltas.indexOf(Math.max(...deltas));
+  const lowestI  = deltas.indexOf(Math.min(...deltas));
+
+  document.getElementById('compare-stats').innerHTML = `
+    <div class="stat-box"><div class="stat-value" style="color:var(--green)">+${avgDelta}</div><div class="stat-label">Ort. Gelişim</div><div class="stat-sub">vize → final</div></div>
+    <div class="stat-box"><div class="stat-value">${improved}</div><div class="stat-label">Gelişim Gösteren</div><div class="stat-sub">${DB.length} öğrenciden</div></div>
+    <div class="stat-box"><div class="stat-value" style="color:var(--green)">+${Math.max(...deltas)}</div><div class="stat-label">En Yüksek Artış</div><div class="stat-sub">${DB[biggestI]?.id}</div></div>
+    <div class="stat-box"><div class="stat-value" style="color:${Math.min(...deltas)<0?'var(--red)':'var(--text-dim)'};">${Math.min(...deltas)}</div><div class="stat-label">En Düşük Değişim</div><div class="stat-sub">${DB[lowestI]?.id}</div></div>
+  `;
+
+  // Improvement chart
+  const labels = DB.map(s=>s.id);
+  const vScores = DB.map(s=>total(s.v));
+  const fScores = DB.map(s=>total(s.f));
+  destroyChart('improvement');
+  CHARTS['improvement'] = new Chart(document.getElementById('c-improvement'),{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'Vize',data:vScores,backgroundColor:'rgba(200,118,10,0.6)',borderWidth:0,borderRadius:2},
+      {label:'Final',data:fScores,backgroundColor:'rgba(44,74,110,0.7)',borderWidth:0,borderRadius:2}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#555',font:{family:'IBM Plex Mono',size:10},boxWidth:10}}},
+      scales:{
+        x:{ticks:{color:'#888',font:{family:'IBM Plex Mono',size:9}},grid:{display:false}},
+        y:{min:0,max:25,ticks:{stepSize:5,color:'#888',font:{family:'IBM Plex Mono',size:9}},grid:{color:'#e8e4dc'}}
+      }
+    }
+  });
+
+  // Category change chart
+  const vCatAvg = CRIT_KEYS.map(k=>round1(avg(DB.map(s=>s.v[k]||0))));
+  const fCatAvg = CRIT_KEYS.map(k=>round1(avg(DB.map(s=>s.f[k]||0))));
+  const catChange = CRIT_KEYS.map((_,i)=>round1(fCatAvg[i]-vCatAvg[i]));
+  destroyChart('catChange');
+  CHARTS['catChange'] = new Chart(document.getElementById('c-cat-change'),{
+    type:'bar',
+    data:{labels:CRIT_NAMES.map(n=>n.split(' ')[0]),
+      datasets:[{
+        label:'Ortalama Artış',
+        data:catChange,
+        backgroundColor:catChange.map(v=>v>0?'rgba(44,110,74,0.7)':'rgba(192,57,43,0.65)'),
+        borderWidth:0,borderRadius:3
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#888',font:{family:'IBM Plex Mono',size:9}},grid:{display:false}},
+        y:{ticks:{color:'#888',font:{family:'IBM Plex Mono',size:9}},grid:{color:'#e8e4dc'}}
+      }
+    }
+  });
+
+  // Detailed table
+  let h=`<table class="data-table"><tr>
+    <th>Kod</th><th>Eser</th>
+    ${CRIT_NAMES.map(n=>`<th colspan="2" style="text-align:center;">${n.split(' ')[0]}</th>`).join('')}
+    <th>V.Top</th><th>F.Top</th><th>Δ</th>
+  </tr><tr>
+    <th></th><th></th>
+    ${CRIT_KEYS.map(()=>'<th style="font-size:9px;color:var(--warn)">V</th><th style="font-size:9px;color:var(--accent)">F</th>').join('')}
+    <th></th><th></th><th></th>
+  </tr>`;
+  [...DB].sort((a,b)=>(total(b.f)-total(b.v))-(total(a.f)-total(a.v))).forEach(s=>{
+    const d=total(s.f)-total(s.v);
+    h+=`<tr>
+      <td><b style="font-family:'IBM Plex Mono',monospace;">${s.id}</b></td>
+      <td style="font-size:12px;">${s.work}</td>
+      ${CRIT_KEYS.map(k=>`<td style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#c8760a;">${s.v[k]||'—'}</td><td style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#2c4a6e;">${s.f[k]||'—'}</td>`).join('')}
+      <td style="font-family:'IBM Plex Mono',monospace;">${total(s.v)}</td>
+      <td style="font-family:'IBM Plex Mono',monospace;font-weight:600;">${total(s.f)}</td>
+      <td><span class="delta ${d>0?'delta-pos':d<0?'delta-neg':'delta-neu'}">${d>0?'+':''}${d}</span></td>
+    </tr>`;
+  });
+  document.getElementById('compare-table').innerHTML = h+'</table>';
+}
+
+// ─── BUILD PROMPT ─────────────────────────────────────────────────────────────
+function buildPrompt() {
+  const show = DB.length > 0;
+  document.getElementById('prompt-empty').style.display = show?'none':'block';
+  document.getElementById('prompt-content').style.display = show?'block':'none';
+  if (!show) return;
+
+  // Collect all keywords
+  const freq = {};
+  DB.forEach(s=>s.keywords.forEach(k=>{ freq[k]=(freq[k]||0)+1; }));
+  const sorted = Object.entries(freq).sort((a,b)=>b[1]-a[1]);
+  const maxF = sorted[0]?.[1]||1;
+  const hues = [215,145,335,45,280,25,175,60,300,190];
+
+  // Cloud
+  const cloudHtml = sorted.slice(0,35).map(([k,f],i)=>{
+    const size = 11+(f/maxF)*16;
+    const h = hues[i%hues.length];
+    const alpha = 0.12+(f/maxF)*0.25;
+    return `<span class="kw-pill" style="font-size:${size}px;padding:${3+(f/maxF)*3}px ${8+(f/maxF)*4}px;background:hsla(${h},55%,50%,${alpha});color:hsl(${h},50%,35%);border:1px solid hsla(${h},50%,50%,0.2)" title="${f} öğrencide geçiyor">${k}&thinsp;<sup style="font-size:9px;opacity:0.7">${f}</sup></span>`;
+  }).join('');
+  document.getElementById('kw-cloud').innerHTML = cloudHtml||'<span style="color:var(--text-dim);font-family:IBM Plex Mono,monospace;font-size:11px;">Kavram verisi yok</span>';
+
+  // Category counts
+  const catCount = {};
+  Object.keys(KW_CATS).forEach(cat=>{
+    let n=0;
+    DB.forEach(s=>s.keywords.forEach(k=>{
+      if(KW_CATS[cat].some(kw=>k.includes(kw)||kw.includes(k))) n++;
+    }));
+    if(n>0) catCount[cat]=n;
+  });
+  const catColors = ['#2c4a6e','#2c6e4a','#6e3a2c','#6e2c4a','#4a2c6e','#2c6e6e'];
+  destroyChart('kwCat');
+  CHARTS['kwCat'] = new Chart(document.getElementById('c-kw-cat'),{
+    type:'doughnut',
+    data:{labels:Object.keys(catCount),datasets:[{data:Object.values(catCount),backgroundColor:catColors.slice(0,Object.keys(catCount).length).map(c=>c+'cc'),borderWidth:0,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{color:'#555',font:{family:'IBM Plex Mono',size:9},boxWidth:8,padding:8}}}
+    }
+  });
+
+  // Top 10 keywords bar
+  const top10 = sorted.slice(0,10);
+  destroyChart('kwTop');
+  CHARTS['kwTop'] = new Chart(document.getElementById('c-kw-top'),{
+    type:'bar',
+    data:{labels:top10.map(([k])=>k),datasets:[{data:top10.map(([,f])=>f),backgroundColor:'rgba(44,74,110,0.7)',borderWidth:0,borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#888',font:{family:'IBM Plex Mono',size:9}},grid:{color:'#e8e4dc'}},
+        y:{ticks:{color:'#444',font:{family:'IBM Plex Mono',size:10}},grid:{display:false}}
+      }
+    }
+  });
+
+  // Richness table
+  let h=`<table class="data-table"><tr>
+    <th>Kod</th><th>Eser</th><th>Kavram Sayısı</th><th>Prompt Uzunluğu</th><th>Zenginlik Skoru</th><th>Mekânsal Yaratıcılık (F)</th>
+  </tr>`;
+  [...DB].sort((a,b)=>kwRichness(b)-kwRichness(a)).forEach(s=>{
+    const rich = kwRichness(s);
+    const pLen = s.prompt ? s.prompt.split(/\s+/).length : 0;
+    const my = s.f.my||0;
+    h+=`<tr>
+      <td><b style="font-family:'IBM Plex Mono',monospace;">${s.id}</b></td>
+      <td style="font-size:12px;">${s.work}</td>
+      <td style="font-family:'IBM Plex Mono',monospace;text-align:center;">${s.keywords.length}</td>
+      <td style="font-family:'IBM Plex Mono',monospace;text-align:center;">${pLen} kelime</td>
+      <td style="font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--accent);text-align:center;">${rich}</td>
+      <td style="text-align:center;">
+        <div class="score-bar">
+          <div class="score-track"><div class="score-fill" style="width:${(my/5)*100}%;background:${my>=4?'#2c6e4a':my>=3?'#c8760a':'#c0392b'}"></div></div>
+          <span class="score-num">${my}/5</span>
+        </div>
+      </td>
+    </tr>`;
+  });
+  document.getElementById('prompt-richness-table').innerHTML = h+'</table>';
+}
+
+// ─── BUILD TEMPORAL ───────────────────────────────────────────────────────────
+function buildTemporal() {
+  const show = DB.length > 0;
+  document.getElementById('temporal-empty').style.display = show?'none':'block';
+  document.getElementById('temporal-content').style.display = show?'block':'none';
+  if (!show) return;
+
+  const strong = DB.filter(s=>s.temporal==='strong').length;
+  const medium = DB.filter(s=>s.temporal==='medium').length;
+  const weak   = DB.filter(s=>s.temporal==='weak').length;
+
+  document.getElementById('temporal-stats').innerHTML = `
+    <div class="stat-box"><div class="stat-value" style="color:var(--green)">${strong}</div><div class="stat-label">Güçlü Ayrışma</div><div class="stat-sub">Üç dönem net</div></div>
+    <div class="stat-box"><div class="stat-value" style="color:var(--warn)">${medium}</div><div class="stat-label">Orta Ayrışma</div><div class="stat-sub">Kısmi ayrışma</div></div>
+    <div class="stat-box"><div class="stat-value" style="color:var(--red)">${weak}</div><div class="stat-label">Zayıf Ayrışma</div><div class="stat-sub">Dönemler benzer</div></div>
+  `;
+
+  destroyChart('tempPie');
+  CHARTS['tempPie'] = new Chart(document.getElementById('c-temporal-pie'),{
+    type:'doughnut',
+    data:{labels:['Güçlü','Orta','Zayıf'],datasets:[{data:[strong,medium,weak],backgroundColor:['rgba(44,110,74,0.8)','rgba(200,118,10,0.7)','rgba(192,57,43,0.7)'],borderWidth:0,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{color:'#555',font:{family:'IBM Plex Mono',size:10},boxWidth:8}}}
+    }
+  });
+
+  // Zamansal Ayrışma puanı vs total final
+  destroyChart('tempBar');
+  CHARTS['tempBar'] = new Chart(document.getElementById('c-temporal-bar'),{
+    type:'bar',
+    data:{
+      labels: DB.map(s=>s.id),
+      datasets:[
+        {label:'Zamansal Ayrışma (F)',data:DB.map(s=>s.f.za||0),backgroundColor:'rgba(44,74,110,0.7)',borderWidth:0,borderRadius:3,yAxisID:'y'},
+        {label:'Final Toplam',data:DB.map(s=>total(s.f)),type:'line',borderColor:'#c8760a',backgroundColor:'transparent',pointBackgroundColor:'#c8760a',borderWidth:1.5,pointRadius:3,yAxisID:'y2'}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#555',font:{family:'IBM Plex Mono',size:10},boxWidth:8}}},
+      scales:{
+        x:{ticks:{color:'#888',font:{family:'IBM Plex Mono',size:9}},grid:{display:false}},
+        y:{min:0,max:5,position:'left',ticks:{stepSize:1,color:'#888',font:{family:'IBM Plex Mono',size:9}},grid:{color:'#e8e4dc'}},
+        y2:{min:0,max:25,position:'right',ticks:{stepSize:5,color:'#c8760a',font:{family:'IBM Plex Mono',size:9}},grid:{display:false}}
+      }
+    }
+  });
+
+  const tempOrder = {strong:0,medium:1,weak:2};
+  const tempLabel = {strong:'Güçlü',medium:'Orta',weak:'Zayıf'};
+  const tempBadge = {strong:'badge-high',medium:'badge-mid',weak:'badge-low'};
+  let h=`<table class="data-table"><tr>
+    <th>Kod</th><th>Eser</th><th>Zamansal Ayrışma (F)</th><th>Genel Seviye</th><th>Final Toplam</th><th>Temporal Not</th>
+  </tr>`;
+  [...DB].sort((a,b)=>tempOrder[a.temporal]-tempOrder[b.temporal]).forEach(s=>{
+    h+=`<tr>
+      <td><b style="font-family:'IBM Plex Mono',monospace;">${s.id}</b></td>
+      <td style="font-size:12px;">${s.work}</td>
+      <td style="text-align:center;">
+        <div class="score-bar">
+          <div class="score-track"><div class="score-fill" style="width:${((s.f.za||0)/5)*100}%;background:var(--accent)"></div></div>
+          <span class="score-num">${s.f.za||'—'}/5</span>
+        </div>
+      </td>
+      <td><span class="badge ${tempBadge[s.temporal]}">${tempLabel[s.temporal]}</span></td>
+      <td style="font-family:'IBM Plex Mono',monospace;font-weight:600;">${total(s.f)}/25</td>
+      <td style="font-size:12px;color:var(--text-mid);">${s.temporal==='strong'?'Geçmiş/bugün/gelecek net kurgulanmış':s.temporal==='medium'?'Kısmi ayrışma mevcut':'Dönemler arası yeterli fark yok'}</td>
+    </tr>`;
+  });
+  document.getElementById('temporal-table').innerHTML = h+'</table>';
+}
+
+// ─── BUILD CORRELATION ────────────────────────────────────────────────────────
+function buildCorrelation() {
+  const show = DB.length > 0;
+  document.getElementById('corr-empty').style.display = show?'none':'block';
+  document.getElementById('corr-content').style.display = show?'block':'none';
+  if (!show) return;
+
+  const points1 = DB.map(s=>({x:kwRichness(s), y:s.f.my||0, label:s.id}));
+  const points2 = DB.map(s=>({x:kwRichness(s), y:total(s.f), label:s.id}));
+
+  const scatterOpts = (xLabel,yLabel,yMax) => ({
+    responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{callbacks:{label:c=>`${c.raw.label}: (${c.raw.x}, ${c.raw.y})`}}
+    },
+    scales:{
+      x:{title:{display:true,text:xLabel,color:'#888',font:{family:'IBM Plex Mono',size:10}},ticks:{color:'#888',font:{family:'IBM Plex Mono',size:9}},grid:{color:'#e8e4dc'}},
+      y:{min:0,max:yMax,title:{display:true,text:yLabel,color:'#888',font:{family:'IBM Plex Mono',size:10}},ticks:{color:'#888',font:{family:'IBM Plex Mono',size:9}},grid:{color:'#e8e4dc'}}
+    }
+  });
+
+  destroyChart('scatter');
+  CHARTS['scatter'] = new Chart(document.getElementById('c-scatter'),{
+    type:'scatter',
+    data:{datasets:[{data:points1,backgroundColor:'rgba(44,74,110,0.7)',pointRadius:7,pointHoverRadius:9}]},
+    options:scatterOpts('Kavramsal Zenginlik Skoru','Mekânsal Yaratıcılık (F)',6)
+  });
+
+  destroyChart('scatter2');
+  CHARTS['scatter2'] = new Chart(document.getElementById('c-scatter2'),{
+    type:'scatter',
+    data:{datasets:[{data:points2,backgroundColor:'rgba(44,110,74,0.7)',pointRadius:7,pointHoverRadius:9}]},
+    options:scatterOpts('Kavramsal Zenginlik Skoru','Final Toplam Puanı',27)
+  });
+
+  // Quadrant
+  const medRich = avg(DB.map(s=>kwRichness(s)));
+  const medCreate = avg(DB.map(s=>s.f.my||0));
+  const quads = {
+    'Yüksek Zenginlik + Yüksek Yaratıcılık':[],
+    'Yüksek Zenginlik + Düşük Yaratıcılık':[],
+    'Düşük Zenginlik + Yüksek Yaratıcılık':[],
+    'Düşük Zenginlik + Düşük Yaratıcılık':[]
+  };
+  DB.forEach(s=>{
+    const r=kwRichness(s), c=s.f.my||0;
+    if(r>=medRich&&c>=medCreate)      quads['Yüksek Zenginlik + Yüksek Yaratıcılık'].push(s.id);
+    else if(r>=medRich&&c<medCreate)  quads['Yüksek Zenginlik + Düşük Yaratıcılık'].push(s.id);
+    else if(r<medRich&&c>=medCreate)  quads['Düşük Zenginlik + Yüksek Yaratıcılık'].push(s.id);
+    else                               quads['Düşük Zenginlik + Düşük Yaratıcılık'].push(s.id);
+  });
+  const qColors = ['badge-high','badge-mid','badge-mid','badge-low'];
+  const qInterp = [
+    'Kavramsal derinlik ve görsel üretim birlikte güçlü — en başarılı grup.',
+    'Zengin prompt oluşturuyor ancak mekânsal yaratıcılığa dönüştürmekte zorlanıyor.',
+    'Yaratıcılık yüksek ancak prompt henüz kavramsal olarak derinleşmemiş.',
+    'Hem kavramsal hem görsel üretimde gelişim alanı mevcut.'
+  ];
+  let h=`<table class="data-table"><tr><th>Grup</th><th>Öğrenciler</th><th>n</th><th>Yorum</th></tr>`;
+  Object.entries(quads).forEach(([q,ids],i)=>{
+    h+=`<tr>
+      <td><span class="badge ${qColors[i]}" style="font-size:10px;">${q}</span></td>
+      <td style="font-family:'IBM Plex Mono',monospace;font-size:11px;">${ids.join(', ')||'—'}</td>
+      <td style="font-family:'IBM Plex Mono',monospace;text-align:center;">${ids.length}</td>
+      <td style="font-size:12px;color:var(--text-mid);">${qInterp[i]}</td>
+    </tr>`;
+  });
+  document.getElementById('quadrant-table').innerHTML = h+'</table>';
+}
+
+// ─── BUILD FINDINGS ───────────────────────────────────────────────────────────
+function buildFindings() {
+  const show = DB.length > 0;
+  document.getElementById('findings-empty').style.display = show?'none':'block';
+  document.getElementById('findings-content').style.display = show?'block':'none';
+  if (!show) return;
+
+  const n = DB.length;
+  const fScores = DB.map(s=>total(s.f));
+  const vScores = DB.map(s=>total(s.v));
+  const deltas  = DB.map((s,i)=>fScores[i]-vScores[i]);
+  const avgF    = round1(avg(fScores));
+  const avgV    = round1(avg(vScores));
+  const avgD    = round1(avg(deltas));
+  const improved= deltas.filter(d=>d>0).length;
+  const high    = fScores.filter(v=>v>=19).length;
+  const mid     = fScores.filter(v=>v>=12&&v<19).length;
+  const low     = fScores.filter(v=>v<12).length;
+
+  const catAvgsF = CRIT_KEYS.map(k=>round1(avg(DB.map(s=>s.f[k]||0))));
+  const catAvgsV = CRIT_KEYS.map(k=>round1(avg(DB.map(s=>s.v[k]||0))));
+  const bestCatI = catAvgsF.indexOf(Math.max(...catAvgsF));
+  const weakCatI = catAvgsF.indexOf(Math.min(...catAvgsF));
+  const mostGainI= CRIT_KEYS.map((_,i)=>catAvgsF[i]-catAvgsV[i]).indexOf(Math.max(...CRIT_KEYS.map((_,i)=>catAvgsF[i]-catAvgsV[i])));
+
+  const turCount = {};
+  DB.forEach(s=>{turCount[s.tur]=(turCount[s.tur]||0)+1;});  // note: s.type not s.tur
+  const turCountFixed = {};
+  DB.forEach(s=>{turCountFixed[s.type]=(turCountFixed[s.type]||0)+1;});
+  const topTur = Object.entries(turCountFixed).sort((a,b)=>b[1]-a[1]);
+
+  const allKw = {};
+  DB.forEach(s=>s.keywords.forEach(k=>{allKw[k]=(allKw[k]||0)+1;}));
+  const topKw = Object.entries(allKw).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k])=>k);
+
+  const strong = DB.filter(s=>s.temporal==='strong').length;
+  const weakT  = DB.filter(s=>s.temporal==='weak').length;
+
+  const biggestI = deltas.indexOf(Math.max(...deltas));
+  const lowestI  = deltas.indexOf(Math.min(...deltas));
+
+  const sections = [
+    {title:'§ 4.2.2 — Sanat Eseri Seçim Bulguları', content:`
+      Araştırma kapsamındaki ${n} öğrencinin sanat eseri seçimleri incelendiğinde, katılımcıların ağırlıklı olarak <strong>${TUR_NAMES[topTur[0][0]]}</strong> türünden eserler seçtiği görülmektedir (n=${topTur[0][1]}, %${Math.round((topTur[0][1]/n)*100)})${topTur[1]?`; bunu <strong>${TUR_NAMES[topTur[1][0]]}</strong> kategorisi izlemektedir (n=${topTur[1][1]}, %${Math.round((topTur[1][1]/n)*100)})`:''}. Bu dağılım Şekil 4.3 ve Şekil 4.4'te grafiksel olarak sunulmaktadır.
+      <br><br>Film türünün baskın seçim kategorisi olması, görsel anlatının belirgin olduğu ve mekânsal atmosferin doğrudan deneyimlenebildiği anlatı biçimlerinin tasarım süreci açısından daha erişilebilir bulunduğu şeklinde yorumlanabilir. Bu durum, Şekil 4.X'te görülen eser türü dağılımıyla da örtüşmektedir.
+    `},
+    {title:'§ 4.2.3 — Prompt Oluşturma Bulguları', content:`
+      Öğrencilerin prompt içeriklerinde öne çıkan anahtar kavramlar incelendiğinde en yüksek frekanslı kavramların şunlar olduğu görülmektedir: <strong>${topKw.join(', ')}</strong>. Bu kavramların seçilen eserlerin anlam katmanlarıyla doğrudan örtüştüğü ve öğrencilerin kavramsal çözümleme sürecini metinsel ifadeye aktarmada bu anahtar kavramlardan hareket ettiği anlaşılmaktadır.
+      <br><br>Prompt içeriklerinin niteliksel analizi, kavramsal derinlik düzeyi yüksek istemlerin daha tutarlı ve özgün mekânsal çıktılar ürettiğini göstermektedir. Buna karşılık yalnızca betimleyici ifadelerle sınırlı kalan promptların daha yüzeysel ve tekrara düşen görseller ortaya koyduğu belirlenmiştir.
+    `},
+    {title:'§ 4.2.4 — Zamansal Tasarım Bulguları', content:`
+      Öğrencilerin geçmiş, günümüz ve gelecek kurguları arasındaki ayrışma başarısı değerlendirildiğinde, ${n} öğrencinin ${strong}'i (%${Math.round((strong/n)*100)}) üç zaman dilimi arasında net bir ayrışma sağlarken, ${weakT}'i (%${Math.round((weakT/n)*100)}) dönemler arası yeterli farklılaşmayı gerçekleştirememiştir.
+      <br><br>Kavramsal derinliğin sınırlı kaldığı durumlarda, üç zaman dilimi arasında yeterli ayrışmanın sağlanamadığı ve üretilen görsellerin birbirine benzer çıktılar sunduğu belirlenmiştir. Zamansal ayrışma ile kavramsal derinlik arasındaki bu ilişki, prompt oluşturmanın yalnızca teknik bir süreç olmadığını; tarihsel ve spekülatif düşünme biçimlerini de gerektirdiğini ortaya koymaktadır.
+    `},
+    {title:'§ 4.2.5 — Yaratıcılık Analizi: Vize → Final Gelişimi', content:`
+      Vize ve final karşılaştırmalı analizi, ${n} öğrenciden ${improved}'inin (%${Math.round((improved/n)*100)}) final aşamasında vize puanına kıyasla gelişim kaydettiğini göstermektedir. Grup vize ortalaması <strong>${avgV}/25</strong> iken final ortalaması <strong>${avgF}/25</strong> düzeyine yükselerek ortalama <strong>+${avgD} puanlık</strong> bir artış gerçekleşmiştir.
+      <br><br>Performans grupları açısından bakıldığında, final aşamasında öğrencilerin %${Math.round((high/n)*100)}'i yüksek performans grubunda (≥19 puan), %${Math.round((mid/n)*100)}'i orta performans grubunda (12–18 puan), %${Math.round((low/n)*100)}'i düşük performans grubunda (&lt;12 puan) yer almaktadır.
+      <br><br>Rubrik kategorileri incelendiğinde, final aşamasında en yüksek ortalama puanın <strong>${CRIT_NAMES[bestCatI]}</strong> kategorisinde (${catAvgsF[bestCatI]}/5) elde edildiği; en düşük ortalamanın ise <strong>${CRIT_NAMES[weakCatI]}</strong> kategorisinde (${catAvgsF[weakCatI]}/5) kaldığı görülmektedir. Vize–final karşılaştırmasında en belirgin gelişim <strong>${CRIT_NAMES[mostGainI]}</strong> ölçütünde gözlemlenmiştir (${catAvgsV[mostGainI]} → ${catAvgsF[mostGainI]}).
+      <br><br>En yüksek bireysel gelişimi <strong>${DB[biggestI]?.id}</strong> sergilerken (Δ = +${deltas[biggestI]}), en sınırlı değişim <strong>${DB[lowestI]?.id}</strong>'de gözlemlenmiştir (Δ = ${deltas[lowestI]}).
+    `},
+    {title:'§ 4.2.6 — Kavramsal Derinlik ve Yaratıcılık İlişkisi', content:`
+      Prompt zenginlik skoru ile mekânsal yaratıcılık puanı arasındaki ilişki incelendiğinde, kavramsal olarak daha katmanlı promptlar oluşturan öğrencilerin mekânsal yaratıcılık ölçütünde daha yüksek puanlar aldığı görülmektedir. Bu bulgu, yapay zekâ destekli tasarım süreçlerinde yaratıcı çıktı kalitesinin yalnızca araç kullanım becerisine değil; kavramsal analiz kapasitesine ve istem oluşturma yetkinliğine bağlı olduğunu ortaya koymaktadır.
+      <br><br>Quadrant analizi, öğrencilerin büyük çoğunluğunun "Yüksek Zenginlik + Yüksek Yaratıcılık" veya "Düşük Zenginlik + Düşük Yaratıcılık" gruplarında yer aldığını göstermekte; bu durum kavramsal derinlik ile görsel üretim kalitesi arasındaki tutarlı ilişkiyi doğrulamaktadır.
+    `},
+  ];
+
+  document.getElementById('findings-content').innerHTML = sections.map(s=>`
+    <div class="card section">
+      <div class="finding-title">${s.title}</div>
+      <div class="finding">${s.content}</div>
+      <button class="btn-ghost" onclick="copySection(this)">Metni Kopyala</button>
+    </div>
+  `).join('');
+}
+
+function copySection(btn) {
+  const text = btn.previousElementSibling.innerText;
+  navigator.clipboard.writeText(text).then(()=>{ btn.textContent='✓ Kopyalandı'; setTimeout(()=>btn.textContent='Metni Kopyala',2000); });
+}
+</script>
+</body>
+</html>
